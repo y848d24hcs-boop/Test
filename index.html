@@ -471,6 +471,9 @@ body.left-handed .sidebar { left:auto; right:8px; }
   </div>
 </div>
 
+<!-- ===== CHART BACKDROP ===== -->
+<div id="chart-bd" style="position:absolute;inset:0;z-index:29;display:none;"></div>
+
 <!-- ===== POP BACKDROP ===== -->
 <div class="pop-backdrop" id="pop-bd"></div>
 
@@ -1448,12 +1451,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
   // Settings / chart buttons
   $('settings-btn').onclick=()=>openSheet('settings-sheet');
-  $('chart-btn').onclick=()=>{
-    const p=$('chart-panel');
-    p.classList.toggle('show');
-    if (p.classList.contains('show')) renderChart();
-  };
-  $('chart-close').onclick=()=>$('chart-panel').classList.remove('show');
+  function openChart()  { $('chart-panel').classList.add('show'); $('chart-bd').style.display='block'; renderChart(); }
+  function closeChart() { $('chart-panel').classList.remove('show'); $('chart-bd').style.display='none'; }
+
+  $('chart-btn').onclick=()=>$('chart-panel').classList.contains('show') ? closeChart() : openChart();
+  $('chart-close').onclick=closeChart;
+  $('chart-bd').onclick=closeChart;
 
   // Chart tabs
   document.querySelectorAll('.chart-tab').forEach(t=>{
