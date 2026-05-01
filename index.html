@@ -198,9 +198,13 @@ body.left-handed .sidebar { left:auto; right:8px; }
 #feedback.show { opacity:1; }
 #feedback.good { border-color:var(--good); }
 #feedback.bad  { border-color:var(--bad); }
+#feedback.push { border-color:rgba(255,255,255,0.3); }
+#feedback.surr { border-color:var(--surrender); }
 #feedback .verdict { font-size:20px; font-weight:700; margin-bottom:3px; }
 #feedback.good .verdict { color:var(--good); }
 #feedback.bad  .verdict { color:var(--bad); }
+#feedback.push .verdict { color:rgba(255,255,255,0.65); }
+#feedback.surr .verdict { color:var(--surrender); }
 #feedback .correction { font-size:13px; color:var(--ink-dim); }
 #feedback .correction strong { color:var(--ink); }
 
@@ -1013,17 +1017,42 @@ function onCorrect(code) {
     scenario.player.push(makeCard(pickRank()));
     const ev2 = evalHand(scenario.player);
     setTimeout(() => {
-      if (ev2.busted || ev2.total===21) { handOver=true; render(); if (!ev2.busted) setTimeout(newScenario,500); }
-      else render();
+      render();
       if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
+      if (ev2.busted) {
+        handOver=true; render();
+        showOutcome('bust', 120);
+        setTimeout(newScenario, 1500);
+      } else if (ev2.total===21) {
+        handOver=true; render();
+        const res = resolveDealer(21);
+        showOutcome(res, 120);
+        setTimeout(newScenario, 1500);
+      }
     }, 300);
   } else if (code==='D') {
     scenario.player.push(makeCard(pickRank()));
+    const ev2 = evalHand(scenario.player);
     handOver=true;
-    setTimeout(() => { render(); setTimeout(newScenario,700); }, 300);
+    setTimeout(() => {
+      render();
+      if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
+      showOutcome(ev2.busted ? 'bust' : resolveDealer(ev2.total), 120);
+      setTimeout(newScenario, 1600);
+    }, 300);
+  } else if (code==='R') {
+    handOver=true; render();
+    showOutcome('surr', 450);
+    setTimeout(newScenario, 1400);
+  } else if (code==='S') {
+    handOver=true; render();
+    const res = resolveDealer(evalHand(scenario.player).total);
+    showOutcome(res, 450);
+    setTimeout(newScenario, 1700);
   } else {
+    // Split — can't resolve a single dealer hand; just advance
     handOver=true;
-    setTimeout(newScenario, 550);
+    setTimeout(newScenario, 600);
   }
 }
 
@@ -1189,6 +1218,41 @@ function renderChart() {
   }
   h+='</tbody>';
   $('chart-table').innerHTML=h;
+}
+
+/* ============================================================
+   HAND RESOLUTION
+============================================================ */
+function resolveDealer(playerTotal) {
+  const hole = makeCard(pickRank());
+  const dealerCards = [hole, scenario.dealer];
+  let ev = evalHand(dealerCards);
+  while (ev.total < 17 || (ev.soft && ev.total === 17 && state.rules.h17)) {
+    dealerCards.push(makeCard(pickRank()));
+    ev = evalHand(dealerCards);
+  }
+  if (ev.busted)               return 'dealerBust';
+  if (ev.total === playerTotal) return 'push';
+  return playerTotal > ev.total ? 'win' : 'lose';
+}
+
+function showOutcome(type, delayMs) {
+  const map = {
+    bust:       { v:'Bust',          cls:'bad'  },
+    dealerBust: { v:'Dealer Busts!', cls:'good' },
+    push:       { v:'Push',          cls:'push' },
+    win:        { v:'You Win!',      cls:'good' },
+    lose:       { v:'Dealer Wins',   cls:'bad'  },
+    surr:       { v:'Surrender',     cls:'surr' },
+  };
+  const o = map[type]; if (!o) return;
+  setTimeout(() => {
+    const f = $('feedback');
+    $('fb-verdict').textContent = o.v;
+    $('fb-correction').innerHTML = '';
+    f.className = 'show ' + o.cls;
+    setTimeout(() => f.classList.remove('show'), 1000);
+  }, delayMs || 0);
 }
 
 /* ============================================================
