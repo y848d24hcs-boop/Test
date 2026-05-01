@@ -5,1843 +5,1514 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a3a1f">
 <title>Blackjack Trainer · Macau</title>
 <style>
 :root {
-  --felt: #0a3a1f;
+  /* Theme colours (overridden by JS) */
+  --felt:      #0a3a1f;
   --felt-deep: #062814;
   --felt-edge: #041a0d;
+
   --card: #fafafa;
-  --card-edge: #d4d4d4;
   --card-back: #c1322a;
   --card-back-pattern: #8a221c;
   --red: #c1322a;
   --black: #1a1a1a;
-  --ink: #ffffff;
-  --ink-dim: rgba(255,255,255,0.55);
-  --ink-faint: rgba(255,255,255,0.3);
-  --gold: #f4c54a;
-  --fire: #ff7a2a;
-  --fire-dim: #6b3a20;
-  --hit: #2d72d9;
-  --hit-glow: rgba(45,114,217,0.35);
-  --stand: #2d8f4f;
-  --stand-glow: rgba(45,143,79,0.35);
-  --double: #b8780b;
-  --double-glow: rgba(184,120,11,0.35);
-  --split: #7848c4;
-  --split-glow: rgba(120,72,196,0.35);
-  --surrender: #6a6a6a;
-  --bust: #e85a4f;
-  --good: #4ade80;
-  --bad: #ef4444;
-  --panel: rgba(0,0,0,0.55);
+
+  --ink:       #ffffff;
+  --ink-dim:   rgba(255,255,255,0.55);
+  --ink-faint: rgba(255,255,255,0.25);
+  --gold:  #f4c54a;
+  --fire:  #ff7a2a;
+
+  --hit:      #2d72d9;
+  --stand:    #2d8f4f;
+  --double:   #b8780b;
+  --split:    #7848c4;
+  --surrender:#6a6a6a;
+  --bust:     #e85a4f;
+  --good:     #4ade80;
+  --bad:      #ef4444;
+
+  --panel:      rgba(0,0,0,0.55);
   --panel-edge: rgba(255,255,255,0.08);
-  --sheet: #1a1f1a;
-  --sheet-2: #242a25;
+  --sheet:      #1a1f1a;
+  --sheet-2:    #242a25;
   --sheet-edge: rgba(255,255,255,0.08);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
 html, body {
-  height: 100%;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  height: 100%; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   background: var(--felt);
   color: var(--ink);
-  user-select: none;
-  -webkit-user-select: none;
   -webkit-font-smoothing: antialiased;
+  user-select: none; -webkit-user-select: none;
   overscroll-behavior: none;
 }
-
 body {
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.04), transparent 60%),
-    radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-deep) 75%, var(--felt-edge) 100%);
+    radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.04), transparent 55%),
+    radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-deep) 70%, var(--felt-edge) 100%);
   background-attachment: fixed;
-  position: relative;
 }
+#app { height:100vh; height:100dvh; width:100vw; position:relative; overflow:hidden; }
 
-#app {
-  height: 100vh;
-  height: 100dvh;
-  width: 100vw;
-  position: relative;
-  overflow: hidden;
-}
-
-/* ============ GAME VIEW ============ */
+/* ===== GAME VIEW ===== */
 #game-view {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-}
-
-.table {
-  position: relative;
-  display: grid;
-  grid-template-rows: 1fr auto 1fr auto auto;
-  align-items: center;
-  justify-items: center;
-  padding: 16px 12px 8px;
-  gap: 12px;
-  overflow: hidden;
-}
-
-/* ===== Dealer ===== */
-.dealer-area {
-  align-self: start;
-  margin-top: 4vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.hand {
-  display: flex;
-  position: relative;
-  height: 168px;
-}
-
-.card {
-  width: 116px;
-  height: 162px;
-  border-radius: 11px;
-  background: var(--card);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.7) inset,
-    0 -1px 0 rgba(0,0,0,0.06) inset,
-    0 4px 12px rgba(0,0,0,0.45),
-    0 1px 2px rgba(0,0,0,0.3);
-  position: relative;
-  flex-shrink: 0;
-  font-family: 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 800;
-  overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.card.deal-anim {
-  animation: deal 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes deal {
-  from { transform: translateY(-30px) rotate(-8deg); opacity: 0; }
-  to   { transform: translateY(0) rotate(0); opacity: 1; }
-}
-
-.card.red { color: var(--red); }
-.card.black { color: var(--black); }
-
-.card .corner {
-  position: absolute;
-  font-size: 22px;
-  line-height: 1;
-  font-weight: 800;
-  text-align: center;
-}
-
-.card .corner .rank { display: block; }
-.card .corner .suit { display: block; font-size: 18px; margin-top: 1px; }
-
-.card .corner.tl { top: 9px; left: 11px; }
-.card .corner.br { bottom: 9px; right: 11px; transform: rotate(180deg); }
-
-.card .pip {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 56px;
-  line-height: 1;
-}
-
-.card.back {
-  background: var(--card-back);
-  background-image:
-    repeating-linear-gradient(45deg, var(--card-back-pattern) 0 2px, transparent 2px 6px),
-    repeating-linear-gradient(-45deg, var(--card-back-pattern) 0 2px, transparent 2px 6px);
-  border: 6px solid var(--card-back);
-  background-clip: content-box, content-box;
-}
-.card.back::after {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border: 2px solid rgba(255,255,255,0.85);
-  border-radius: 7px;
-}
-
-/* Dealer cards: back left, face right, slight overlap */
-.dealer-area .hand .card { margin-left: -58px; }
-.dealer-area .hand .card:first-child { margin-left: 0; }
-
-/* ===== Sidebar ===== */
-.sidebar {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--panel);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--panel-edge);
-  border-radius: 18px;
-  padding: 12px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  z-index: 5;
-}
-
-.sidebar .stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 4px 6px;
-  border-radius: 10px;
-  cursor: pointer;
-  min-width: 48px;
-}
-.sidebar .stat:active { background: rgba(255,255,255,0.08); }
-
-.sidebar .stat .icon {
-  font-size: 22px;
-  line-height: 1;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-}
-.sidebar .stat .value {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-}
-.sidebar .stat .label {
-  font-size: 10px;
-  color: var(--ink-dim);
-  letter-spacing: 0.05em;
-}
-.sidebar .stat.streak .icon { color: var(--fire-dim); }
-.sidebar .stat.streak.active .icon { color: var(--fire); }
-.sidebar .stat.mp .icon { color: var(--gold); }
-
-.sidebar .divider {
-  width: 28px;
-  height: 1px;
-  background: var(--panel-edge);
-  margin: 2px 0;
-}
-
-.sidebar .btn-icon {
-  background: transparent;
-  border: none;
-  color: var(--ink);
-  font-size: 22px;
-  padding: 6px;
-  cursor: pointer;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-}
-.sidebar .btn-icon:active { background: rgba(255,255,255,0.08); }
-
-/* ===== Player area ===== */
-.player-area {
-  align-self: end;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 4px;
-}
-
-.player-area .hand .card {
-  margin-left: -78px;
-  transition: transform 0.25s ease;
-}
-.player-area .hand .card:first-child { margin-left: 0; }
-
-.hand-info {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hand-info .total {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.02em;
-}
-.hand-info .total.bust { color: var(--bust); }
-
-.hand-info .zone {
-  font-size: 12px;
-  color: var(--ink-dim);
-  letter-spacing: 0.04em;
-}
-.hand-info .zone .dot { margin: 0 6px; opacity: 0.5; }
-
-.hand-info .bust-label {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--bust);
-  letter-spacing: 0.02em;
-}
-
-/* ===== Actions ===== */
-.actions {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 8px;
-  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
-}
-
-.btn-action {
-  font-family: inherit;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  border: none;
-  border-radius: 14px;
-  padding: 18px 8px 16px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  transition: transform 0.1s ease, filter 0.1s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.12) inset;
-  min-height: 76px;
-}
-.btn-action:active { transform: scale(0.97); filter: brightness(1.1); }
-.btn-action[disabled] { opacity: 0.35; pointer-events: none; }
-
-.btn-action .icon {
-  width: 26px; height: 26px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  background: rgba(255,255,255,0.18);
-  border-radius: 999px;
-  font-weight: 700;
-}
-
-.btn-action.hit { background: var(--hit); box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 24px var(--hit-glow), 0 1px 0 rgba(255,255,255,0.18) inset; }
-.btn-action.stand { background: var(--stand); box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 24px var(--stand-glow), 0 1px 0 rgba(255,255,255,0.18) inset; }
-.btn-action.double { background: var(--double); box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 24px var(--double-glow), 0 1px 0 rgba(255,255,255,0.18) inset; }
-.btn-action.split { background: var(--split); box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 0 24px var(--split-glow), 0 1px 0 rgba(255,255,255,0.18) inset; }
-.btn-action.surrender { background: var(--surrender); }
-
-.btn-deal {
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ink);
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 999px;
-  padding: 12px 36px;
-  cursor: pointer;
-}
-.btn-deal:active { background: rgba(255,255,255,0.2); }
-
-/* ===== Feedback overlay ===== */
-.feedback {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0,0,0,0.85);
-  border-radius: 18px;
-  padding: 18px 26px;
-  text-align: center;
-  z-index: 20;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
-  border: 2px solid transparent;
-}
-.feedback.show { opacity: 1; }
-.feedback.good { border-color: var(--good); }
-.feedback.bad { border-color: var(--bad); }
-.feedback .verdict {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-.feedback.good .verdict { color: var(--good); }
-.feedback.bad .verdict { color: var(--bad); }
-.feedback .correction {
-  font-size: 14px;
-  color: var(--ink-dim);
-}
-.feedback .correction strong { color: var(--ink); }
-
-/* ===== Sheet (modal panels) ===== */
-.sheet {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 100;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-.sheet.show { opacity: 1; pointer-events: auto; }
-
-.sheet-content {
-  background: var(--sheet);
-  width: 100%;
-  max-height: 92vh;
-  border-radius: 20px 20px 0 0;
-  padding: env(safe-area-inset-top) 0 calc(20px + env(safe-area-inset-bottom));
-  overflow-y: auto;
-  transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  -webkit-overflow-scrolling: touch;
-}
-.sheet.show .sheet-content { transform: translateY(0); }
-
-.sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 20px 14px;
-  position: sticky;
-  top: 0;
-  background: var(--sheet);
-  z-index: 1;
-}
-.sheet-header.with-back {
-  justify-content: flex-start;
-  gap: 12px;
-}
-.sheet-header h2 {
-  flex: 1;
-  text-align: center;
-  font-size: 20px;
-  font-weight: 600;
-}
-.sheet-header.with-back h2 { text-align: center; margin-right: 36px; }
-
-.sheet-header .back-btn,
-.sheet-header .done-btn {
-  background: rgba(255,255,255,0.1);
-  border: none;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 500;
-  border-radius: 999px;
-  padding: 8px 16px;
-  cursor: pointer;
-}
-.sheet-header .back-btn { padding: 8px 12px; min-width: 36px; }
-
-.sheet-section {
-  padding: 8px 20px 20px;
-}
-
-.sheet-section .title {
-  font-size: 13px;
-  color: var(--ink-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 12px 4px 8px;
-  font-weight: 500;
-}
-
-.card-group {
-  background: var(--sheet-2);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.card-row {
-  display: flex;
-  align-items: center;
-  padding: 14px 16px;
-  border-top: 1px solid var(--sheet-edge);
-  gap: 12px;
-  cursor: pointer;
-  min-height: 52px;
-}
-.card-row:first-child { border-top: none; }
-.card-row:active { background: rgba(255,255,255,0.04); }
-
-.card-row .row-icon {
-  font-size: 18px;
-  width: 28px;
-  text-align: center;
-  color: var(--gold);
-}
-
-.card-row .row-main {
-  flex: 1;
-  min-width: 0;
-}
-.card-row .row-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--ink);
-}
-.card-row .row-title.locked { color: var(--ink-dim); }
-.card-row .row-title.zone1 { color: #4ade80; }
-.card-row .row-title.zone2 { color: #4ade80; }
-.card-row .row-sub {
-  font-size: 13px;
-  color: var(--ink-dim);
-  margin-top: 2px;
-}
-
-.card-row .row-trail {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--ink-dim);
-}
-.card-row .row-trail .check { color: var(--good); font-size: 18px; }
-.card-row .row-trail .lock { color: var(--ink-dim); font-size: 16px; }
-.card-row .row-trail .mp-cost { color: var(--double); font-size: 13px; font-weight: 600; }
-.card-row .row-trail .chevron { color: var(--ink-faint); font-size: 18px; }
-.card-row .row-trail .arrow-updown { color: var(--ink-faint); font-size: 14px; }
-
-/* Toggle switch */
-.toggle {
-  position: relative;
-  width: 51px;
-  height: 31px;
-  background: rgba(120,120,128,0.32);
-  border-radius: 16px;
-  transition: background 0.2s ease;
-  flex-shrink: 0;
-}
-.toggle::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 27px;
-  height: 27px;
-  background: white;
-  border-radius: 50%;
-  transition: transform 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-.toggle.on { background: var(--stand); }
-.toggle.on::after { transform: translateX(20px); }
-
-/* Select */
-.select-value {
-  color: var(--ink-dim);
-  font-size: 15px;
-}
-
-/* ===== Popovers ===== */
-.popover {
-  position: absolute;
-  z-index: 50;
-  background: rgba(30,32,32,0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  min-width: 240px;
-  padding: 4px;
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.95);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-}
-.popover.show {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
-}
-
-.popover .pop-row {
-  display: flex;
-  align-items: center;
-  padding: 12px 14px;
-  border-radius: 10px;
-  gap: 10px;
-  cursor: pointer;
-  min-height: 48px;
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
-.popover .pop-row:first-child { border-top: none; }
-.popover .pop-row:active { background: rgba(255,255,255,0.06); }
-.popover .pop-row.locked { opacity: 0.5; }
-.popover .pop-main { flex: 1; min-width: 0; }
-.popover .pop-title { font-size: 15px; font-weight: 500; color: var(--ink); }
-.popover .pop-sub { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
-.popover .pop-trail { color: var(--ink-dim); font-size: 16px; }
-.popover .pop-trail .check { color: var(--good); font-size: 18px; }
-
-.popover.info {
-  padding: 18px 20px;
-  text-align: center;
-}
-.popover.info .pop-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-}
-.popover.info .pop-icon.gold { color: var(--gold); }
-.popover.info .pop-icon.fire { color: var(--fire); }
-.popover.info .pop-num {
-  font-size: 38px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 4px;
-}
-.popover.info .pop-cap {
-  font-size: 13px;
-  color: var(--ink-dim);
-  margin-bottom: 12px;
-}
-.popover.info .pop-detail {
-  font-size: 12px;
-  color: var(--ink-dim);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.popover.info .pop-stats {
-  display: flex;
-  justify-content: center;
-  gap: 28px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding-top: 10px;
-}
-.popover.info .pop-stat-num {
-  font-size: 26px;
-  font-weight: 700;
-}
-.popover.info .pop-stat-num.fire { color: var(--fire); }
-.popover.info .pop-stat-cap {
-  font-size: 11px;
-  color: var(--ink-dim);
-  margin-top: 2px;
-}
-
-/* Backdrop for popovers */
-.pop-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 49;
-  display: none;
-}
-.pop-backdrop.show { display: block; }
-
-/* Charts viewer */
-#charts-sheet .sheet-content {
-  background: #0a0604;
-  padding: 0 0 calc(20px + env(safe-area-inset-bottom));
-}
-.charts-tabs {
-  display: flex;
-  position: sticky;
-  top: 0;
-  background: #0a0604;
-  border-bottom: 1px solid rgba(212,175,55,0.18);
-  z-index: 2;
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
   padding-top: env(safe-area-inset-top);
 }
-.charts-tabs .done-bar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 12px 16px;
-  width: 100%;
-}
-.charts-tabs-row {
-  display: flex;
-  width: 100%;
-  border-top: 1px solid rgba(212,175,55,0.12);
-}
-.charts-tab {
-  flex: 1;
-  padding: 14px 8px;
-  background: transparent;
-  border: none;
-  color: rgba(245,236,215,0.6);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-.charts-tab.active {
-  color: #f0cf6b;
-  border-bottom-color: #d4af37;
-}
-#charts-frame {
-  width: 100%;
-  height: calc(92vh - 64px - env(safe-area-inset-top));
-  border: none;
-  background: #0a0604;
+.table {
+  flex:1; position:relative;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:space-between;
+  padding:12px 12px 8px; overflow:hidden;
 }
 
-/* Statistics blocks */
-.stat-block {
-  background: var(--sheet-2);
-  border-radius: 14px;
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+/* ===== SIDEBAR ===== */
+.sidebar {
+  position:absolute; top:50%; transform:translateY(-50%);
+  left:8px;
+  background:var(--panel);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--panel-edge);
+  border-radius:18px; padding:10px 8px;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  z-index:5;
 }
-.stat-block .label { font-size: 15px; color: var(--ink); }
-.stat-block .value { font-size: 17px; font-weight: 600; color: var(--gold); }
-.stat-block .value.streak { color: var(--fire); }
+body.left-handed .sidebar { left:auto; right:8px; }
 
-.zone-prog {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-top: 1px solid var(--sheet-edge);
+.sidebar .stat {
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  padding:4px 6px; border-radius:10px; cursor:pointer; min-width:46px;
 }
-.zone-prog:first-child { border-top: none; }
-.zone-prog .zone-name { font-weight: 500; flex: 1; }
-.zone-prog .zone-name.locked { color: var(--ink-dim); }
-.zone-prog .pct { font-size: 14px; color: var(--gold); font-weight: 600; }
+.sidebar .stat:active { background:rgba(255,255,255,0.08); }
+.sidebar .stat .icon { font-size:20px; line-height:1; }
+.sidebar .stat .val  { font-size:13px; font-weight:700; }
+.sidebar .stat .lbl  { font-size:10px; color:var(--ink-dim); }
 
-/* Small utility */
-.hidden { display: none !important; }
-.center { text-align: center; }
+.sidebar .stat.streak .icon { color:rgba(255,122,42,0.3); }
+.sidebar .stat.streak.hot   .icon { color:var(--fire); }
+.sidebar .stat.mp .icon { color:var(--gold); }
+.sidebar .divider { width:28px; height:1px; background:var(--panel-edge); }
+.sidebar .icon-btn {
+  background:none; border:none; color:var(--ink);
+  font-size:20px; width:36px; height:36px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:10px; cursor:pointer;
+}
+.sidebar .icon-btn:active { background:rgba(255,255,255,0.08); }
 
-/* Phone landscape / large screens — keep mobile feel */
-@media (min-width: 700px) {
-  #app { max-width: 480px; margin: 0 auto; box-shadow: 0 0 80px rgba(0,0,0,0.6); }
+/* ===== CARDS ===== */
+.dealer-area { align-self:flex-start; margin-top:2vh; }
+.player-area { align-self:center; display:flex; flex-direction:column; align-items:center; gap:10px; }
+
+.hand { display:flex; position:relative; height:162px; }
+
+.card {
+  width:110px; height:154px; border-radius:10px;
+  background:var(--card);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 4px 14px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
+  position:relative; flex-shrink:0;
+  font-weight:800; overflow:hidden;
+  animation: deal .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes deal { from{transform:translateY(-24px) rotate(-5deg);opacity:0} to{transform:none;opacity:1} }
+
+.card.red { color:var(--red); }
+.card.black { color:var(--black); }
+.card .corner { position:absolute; font-size:20px; line-height:1; text-align:center; }
+.card .corner .rank { display:block; }
+.card .corner .suit { display:block; font-size:16px; margin-top:1px; }
+.card .corner.tl { top:8px; left:10px; }
+.card .corner.br { bottom:8px; right:10px; transform:rotate(180deg); }
+.card .pip { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:50px; line-height:1; }
+
+.card.back {
+  background:var(--card-back);
+  background-image:
+    repeating-linear-gradient(45deg,var(--card-back-pattern) 0 2px,transparent 2px 6px),
+    repeating-linear-gradient(-45deg,var(--card-back-pattern) 0 2px,transparent 2px 6px);
+  border:5px solid var(--card-back);
+}
+.card.back::after { content:''; position:absolute; inset:3px; border:2px solid rgba(255,255,255,0.8); border-radius:7px; }
+
+.dealer-area .hand .card { margin-left:-56px; }
+.dealer-area .hand .card:first-child { margin-left:0; }
+.player-area .hand .card { margin-left:-76px; }
+.player-area .hand .card:first-child { margin-left:0; }
+
+/* ===== HAND INFO ===== */
+.hand-info { text-align:center; }
+.hand-info .total { font-size:30px; font-weight:700; letter-spacing:-0.02em; }
+.hand-info .zone-lbl { font-size:12px; color:var(--ink-dim); margin-top:1px; }
+.hand-info .zone-lbl .dot { margin:0 5px; opacity:0.4; }
+.hand-info .bust-lbl { font-size:26px; font-weight:700; color:var(--bust); display:none; }
+
+/* ===== ACTIONS ===== */
+.actions {
+  display:flex; gap:8px;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+  flex-shrink:0;
+}
+.btn-action {
+  flex:1; font-family:inherit; font-size:16px; font-weight:600; color:var(--ink);
+  border:none; border-radius:14px; padding:16px 6px 14px;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  cursor:pointer; min-height:72px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.12) inset;
+  transition:transform .1s ease;
+}
+.btn-action:active { transform:scale(0.97); }
+.btn-action .icon {
+  width:24px; height:24px; border-radius:50%;
+  background:rgba(255,255,255,0.18);
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:700;
+}
+.btn-action.hit    { background:var(--hit); }
+.btn-action.stand  { background:var(--stand); }
+.btn-action.double { background:var(--double); }
+.btn-action.split  { background:var(--split); }
+.btn-action.surr   { background:var(--surrender); }
+
+.btn-deal {
+  font-family:inherit; font-size:16px; font-weight:600; color:var(--ink);
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18);
+  border-radius:999px; padding:12px 36px; cursor:pointer; margin:auto;
+}
+.btn-deal:active { background:rgba(255,255,255,0.2); }
+
+/* ===== FEEDBACK ===== */
+#feedback {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  background:rgba(0,0,0,0.88); border-radius:16px; padding:16px 24px;
+  text-align:center; z-index:20; pointer-events:none;
+  opacity:0; transition:opacity .2s; border:2px solid transparent;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+}
+#feedback.show { opacity:1; }
+#feedback.good { border-color:var(--good); }
+#feedback.bad  { border-color:var(--bad); }
+#feedback .verdict { font-size:20px; font-weight:700; margin-bottom:3px; }
+#feedback.good .verdict { color:var(--good); }
+#feedback.bad  .verdict { color:var(--bad); }
+#feedback .correction { font-size:13px; color:var(--ink-dim); }
+#feedback .correction strong { color:var(--ink); }
+
+/* ===== CHART PANEL ===== */
+#chart-panel {
+  position:absolute; left:0; right:0;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  background:rgba(14,16,16,0.97);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border-radius:20px 20px 0 0;
+  border-top:1px solid rgba(255,255,255,0.08);
+  z-index:25;
+  transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+  max-height:70vh; display:flex; flex-direction:column;
+}
+#chart-panel.show { transform:translateY(0); }
+
+.chart-hdr {
+  display:flex; align-items:center; padding:12px 14px 8px; gap:10px; flex-shrink:0;
+}
+.chart-title { font-size:17px; font-weight:600; flex:1; }
+.chart-tabs { display:flex; gap:4px; }
+.chart-tab {
+  font-family:inherit; font-size:13px; font-weight:600;
+  background:rgba(255,255,255,0.08); border:none; color:var(--ink-dim);
+  border-radius:8px; padding:5px 12px; cursor:pointer;
+}
+.chart-tab.active { background:rgba(255,255,255,0.18); color:var(--ink); }
+.chart-close {
+  background:rgba(255,255,255,0.08); border:none; color:var(--ink-dim);
+  width:28px; height:28px; border-radius:50%; cursor:pointer;
+  font-size:14px; display:flex; align-items:center; justify-content:center;
 }
 
-/* Scenario mode icons */
-.scenario-page-dot {
-  position: absolute;
-  right: 14px;
-  bottom: 110px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  opacity: 0.6;
-}
-.scenario-page-dot .d {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--gold);
+/* Compact chart table */
+#chart-wrap {
+  flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:0 8px; overscroll-behavior:contain;
 }
 
+.ct {
+  width:100%; border-collapse:collapse;
+  table-layout:fixed; font-size:11px; font-weight:700;
+}
+.ct-corner { width:34px; }
+.ct-col-hdr {
+  padding:4px 2px; font-size:11px; font-weight:600; color:var(--ink-dim);
+  text-align:center; position:sticky; top:0;
+  background:rgba(14,16,16,0.98);
+}
+.ct-col-hdr.cur { color:var(--gold); }
+.ct-row-lbl {
+  text-align:left; padding:2px 4px; font-size:10px; font-weight:600;
+  color:var(--ink-dim); white-space:nowrap;
+}
+.ct-row-lbl.cur { color:var(--gold); }
+.ct-cell {
+  text-align:center; padding:3px 2px; font-size:11px; font-weight:700;
+  border-radius:3px; position:relative;
+}
+/* colours */
+.ct-cell.c-h { background:#2d72d9; color:#fff; }
+.ct-cell.c-s { background:#2d8f4f; color:#fff; }
+.ct-cell.c-d { background:#b8780b; color:#fff; }
+.ct-cell.c-p { background:#7848c4; color:#fff; }
+.ct-cell.c-r { background:#555;    color:#ddd; }
+.ct-cell.cur { outline:2px solid var(--gold); outline-offset:-2px; z-index:1; }
+
+.chart-legend {
+  display:flex; justify-content:center; gap:14px;
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+  border-top:1px solid rgba(255,255,255,0.06);
+  flex-shrink:0;
+}
+.chart-legend .item { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; }
+.chart-legend .swatch {
+  width:16px; height:16px; border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; color:#fff; font-weight:700;
+}
+.chart-legend .sw-h { background:#2d72d9; }
+.chart-legend .sw-s { background:#2d8f4f; }
+.chart-legend .sw-d { background:#b8780b; }
+.chart-legend .sw-p { background:#7848c4; }
+
+/* ===== SHEETS ===== */
+.sheet {
+  position:absolute; inset:0; background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  z-index:100; display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .25s;
+}
+.sheet.show { opacity:1; pointer-events:auto; }
+.sheet-content {
+  background:var(--sheet); width:100%; max-height:92vh;
+  border-radius:20px 20px 0 0;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.sheet.show .sheet-content { transform:translateY(0); }
+.sheet-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 20px 12px; position:sticky; top:0; background:var(--sheet); z-index:1;
+}
+.sheet-hdr h2 { font-size:18px; font-weight:600; }
+.btn-done, .btn-back {
+  font-family:inherit; font-size:15px; font-weight:500; color:var(--ink);
+  background:rgba(255,255,255,0.1); border:none; border-radius:999px;
+  padding:7px 16px; cursor:pointer;
+}
+.btn-back { padding:7px 12px; }
+
+.sec-title {
+  font-size:13px; color:var(--ink-dim);
+  text-transform:uppercase; letter-spacing:.05em;
+  padding:14px 20px 6px; font-weight:500;
+}
+.card-group { background:var(--sheet-2); border-radius:14px; margin:0 16px; overflow:hidden; }
+.crow {
+  display:flex; align-items:center; padding:14px 16px;
+  border-top:1px solid var(--sheet-edge); gap:12px; min-height:52px;
+}
+.crow:first-child { border-top:none; }
+.crow.tap { cursor:pointer; }
+.crow.tap:active { background:rgba(255,255,255,0.04); }
+.crow .crow-icon { font-size:18px; width:26px; text-align:center; color:var(--good); }
+.crow .crow-main { flex:1; min-width:0; }
+.crow .crow-title { font-size:16px; font-weight:500; color:var(--ink); }
+.crow .crow-title.green { color:var(--good); }
+.crow .crow-title.dim   { color:var(--ink-dim); }
+.crow .crow-sub   { font-size:13px; color:var(--ink-dim); margin-top:2px; }
+.crow .crow-trail { display:flex; align-items:center; gap:8px; color:var(--ink-dim); font-size:14px; }
+.crow .crow-trail .chev { color:var(--ink-faint); font-size:18px; }
+.crow .crow-trail .check { color:var(--good); font-size:17px; }
+.crow .crow-trail .lock  { font-size:14px; }
+.crow .crow-trail .mp-cost { color:var(--double); font-size:13px; font-weight:600; }
+
+/* toggle */
+.toggle { position:relative; width:51px; height:31px; background:rgba(120,120,128,0.35); border-radius:16px; cursor:pointer; transition:background .2s; flex-shrink:0; }
+.toggle::after { content:''; position:absolute; top:2px; left:2px; width:27px; height:27px; background:#fff; border-radius:50%; transition:transform .2s; box-shadow:0 2px 4px rgba(0,0,0,0.3); }
+.toggle.on { background:var(--stand); }
+.toggle.on::after { transform:translateX(20px); }
+
+/* theme swatch */
+.theme-swatch { width:32px; height:32px; border-radius:8px; flex-shrink:0; }
+
+/* stat blocks */
+.stat-block { background:var(--sheet-2); border-radius:14px; margin:0 16px 8px; }
+.stat-row { display:flex; align-items:center; padding:14px 16px; border-top:1px solid var(--sheet-edge); justify-content:space-between; }
+.stat-row:first-child { border-top:none; }
+.stat-row .label { font-size:16px; }
+.stat-row .value { font-size:17px; font-weight:600; color:var(--ink-dim); }
+.stat-row .value.gold   { color:var(--gold); }
+.stat-row .value.streak { color:var(--fire); }
+
+/* ===== POPOVERS ===== */
+.popover {
+  position:absolute; z-index:60;
+  background:rgba(28,30,30,0.97);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px; min-width:230px; padding:4px;
+  opacity:0; pointer-events:none;
+  transform:scale(0.95); transition:opacity .15s, transform .15s;
+  box-shadow:0 12px 40px rgba(0,0,0,0.6);
+}
+.popover.show { opacity:1; pointer-events:auto; transform:scale(1); }
+.pop-row {
+  display:flex; align-items:center; padding:11px 14px;
+  border-radius:10px; gap:10px; cursor:pointer; min-height:46px;
+  border-top:1px solid rgba(255,255,255,0.05);
+}
+.pop-row:first-child { border-top:none; }
+.pop-row:active { background:rgba(255,255,255,0.06); }
+.pop-row.locked { opacity:.45; pointer-events:none; }
+.pop-row .pop-main { flex:1; }
+.pop-row .pop-title { font-size:15px; font-weight:500; }
+.pop-row .pop-sub   { font-size:12px; color:var(--ink-dim); margin-top:2px; }
+.pop-row .pop-trail { font-size:16px; color:var(--ink-dim); }
+.pop-row .pop-trail .check { color:var(--good); font-size:17px; }
+
+.popover.info {
+  padding:16px 18px; text-align:center; min-width:260px;
+}
+.pi-icon { font-size:28px; margin-bottom:6px; }
+.pi-icon.gold  { color:var(--gold); }
+.pi-icon.fire  { color:var(--fire); }
+.pi-num { font-size:36px; font-weight:700; letter-spacing:-.02em; margin-bottom:2px; }
+.pi-cap { font-size:12px; color:var(--ink-dim); margin-bottom:10px; }
+.pi-detail { font-size:12px; color:var(--ink-dim); border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; display:flex; align-items:center; justify-content:center; gap:6px; }
+.pi-stats { display:flex; justify-content:center; gap:28px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; }
+.pi-snum { font-size:24px; font-weight:700; }
+.pi-snum.fire { color:var(--fire); }
+.pi-scap { font-size:11px; color:var(--ink-dim); margin-top:2px; }
+
+.pop-backdrop { position:absolute; inset:0; z-index:59; display:none; }
+.pop-backdrop.show { display:block; }
+
+/* ===== MEDIA ===== */
+@media (min-width:700px) {
+  #app { max-width:430px; margin:0 auto; box-shadow:0 0 80px rgba(0,0,0,0.7); }
+}
 </style>
 </head>
 <body>
-
 <div id="app">
 
-  <!-- ============ MAIN GAME VIEW ============ -->
-  <main id="game-view">
-    <div class="table">
-
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <div class="stat streak" id="streak-stat" data-pop="streak">
-          <div class="icon">&#x1F525;</div>
-          <div class="value" id="streak-value">0</div>
-        </div>
-        <div class="stat mp" id="mp-stat" data-pop="mp">
-          <div class="icon">&#x2605;</div>
-          <div class="value" id="mp-value">0</div>
-        </div>
-        <div class="stat zone" id="zone-stat" data-pop="zone">
-          <div class="value" id="zone-num">1</div>
-          <div class="label">Zone</div>
-        </div>
-        <div class="divider"></div>
-        <button class="btn-icon" id="settings-btn" aria-label="Settings">&#x2699;</button>
-        <button class="btn-icon" id="charts-btn" aria-label="Strategy charts">&#x1F4C4;</button>
-      </aside>
-
-      <!-- Dealer cards -->
-      <div class="dealer-area">
-        <div class="hand" id="dealer-hand"></div>
+<!-- ===== GAME VIEW ===== -->
+<main id="game-view">
+  <div class="table">
+    <aside class="sidebar">
+      <div class="stat streak" id="s-streak" data-pop="streak">
+        <div class="icon">&#x1F525;</div>
+        <div class="val" id="s-streak-val">0</div>
       </div>
-
-      <!-- Player area -->
-      <div class="player-area">
-        <div class="hand" id="player-hand"></div>
-        <div class="hand-info">
-          <div class="total" id="player-total">—</div>
-          <div class="zone" id="zone-label">Zone 1 &middot; Hard Totals</div>
-          <div class="bust-label hidden" id="bust-label">Bust</div>
-        </div>
+      <div class="stat mp" id="s-mp" data-pop="mp">
+        <div class="icon">&#x2605;</div>
+        <div class="val" id="s-mp-val">0</div>
       </div>
-
-    </div>
-
-    <!-- Action buttons -->
-    <div class="actions" id="actions"></div>
-  </main>
-
-  <!-- Feedback toast -->
-  <div class="feedback" id="feedback">
-    <div class="verdict" id="feedback-verdict"></div>
-    <div class="correction" id="feedback-correction"></div>
-  </div>
-
-  <!-- Popover backdrop -->
-  <div class="pop-backdrop" id="pop-backdrop"></div>
-
-  <!-- Zone selector popover -->
-  <div class="popover" id="zone-popover">
-    <div class="pop-row" data-zone="1">
-      <div class="pop-main">
-        <div class="pop-title">Zone 1</div>
-        <div class="pop-sub">Hard Totals</div>
+      <div class="stat" id="s-zone" data-pop="zone">
+        <div class="val" id="s-zone-val">1</div>
+        <div class="lbl">Zone</div>
       </div>
-      <div class="pop-trail"></div>
-    </div>
-    <div class="pop-row" data-zone="2">
-      <div class="pop-main">
-        <div class="pop-title">Zone 2</div>
-        <div class="pop-sub">Soft Totals</div>
-      </div>
-      <div class="pop-trail"></div>
-    </div>
-    <div class="pop-row" data-zone="3">
-      <div class="pop-main">
-        <div class="pop-title">Zone 3</div>
-        <div class="pop-sub">Pairs</div>
-      </div>
-      <div class="pop-trail"></div>
-    </div>
-    <div class="pop-row" data-zone="4">
-      <div class="pop-main">
-        <div class="pop-title">Zone 4</div>
-        <div class="pop-sub">Full Strategy</div>
-      </div>
-      <div class="pop-trail"></div>
-    </div>
-  </div>
+      <div class="divider"></div>
+      <button class="icon-btn" id="settings-btn">&#x2699;</button>
+      <button class="icon-btn" id="chart-btn">&#x1F4C4;</button>
+    </aside>
 
-  <!-- MP popover -->
-  <div class="popover info" id="mp-popover">
-    <div class="pop-icon gold">&#x2605;</div>
-    <div class="pop-num" id="mp-pop-num">0</div>
-    <div class="pop-cap">Mastery Points</div>
-    <div class="pop-detail" id="mp-pop-next">
-      <span class="lock">&#x1F512;</span><span id="mp-next-text">Next unlock</span>
+    <div class="dealer-area">
+      <div class="hand" id="dealer-hand"></div>
     </div>
-  </div>
-
-  <!-- Streak popover -->
-  <div class="popover info" id="streak-popover" style="min-width: 280px;">
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">
-      <span style="font-size:24px;color:var(--fire);">&#x1F525;</span>
-      <span style="font-size:20px;font-weight:600;">Streak</span>
-    </div>
-    <div style="font-size:13px;color:var(--ink-dim);line-height:1.5;margin-bottom:12px;">
-      How many correct decisions you've made in a row. Resets when you make a mistake.
-    </div>
-    <div class="pop-stats">
-      <div>
-        <div class="pop-stat-num" id="streak-pop-cur">0</div>
-        <div class="pop-stat-cap">Current</div>
-      </div>
-      <div>
-        <div class="pop-stat-num fire" id="streak-pop-best">0</div>
-        <div class="pop-stat-cap">Best</div>
+    <div class="player-area">
+      <div class="hand" id="player-hand"></div>
+      <div class="hand-info">
+        <div class="total" id="p-total">—</div>
+        <div class="zone-lbl" id="zone-lbl">Zone 1 <span class="dot">&middot;</span> Hard Totals</div>
+        <div class="bust-lbl" id="bust-lbl">Bust</div>
       </div>
     </div>
   </div>
+  <div class="actions" id="actions"></div>
+</main>
 
-  <!-- ============ SETTINGS SHEET (Blackjack Gym) ============ -->
-  <div class="sheet" id="settings-sheet">
-    <div class="sheet-content" onclick="event.stopPropagation()">
-      <div class="sheet-header">
-        <div style="width:48px;"></div>
-        <h2>Blackjack Gym</h2>
-        <button class="done-btn" data-close="settings-sheet">Done</button>
-      </div>
-
-      <div class="sheet-section">
-        <div class="title">Training Zone</div>
-        <div class="card-group" id="zone-list">
-          <!-- populated by JS -->
-        </div>
-      </div>
-
-      <div class="sheet-section">
-        <div class="card-group">
-          <div class="card-row" data-open="stats-sheet">
-            <div class="row-icon" style="color:#4ade80;">&#x1F4CA;</div>
-            <div class="row-main"><div class="row-title">Statistics</div></div>
-            <div class="row-trail"><span class="chevron">&rsaquo;</span></div>
-          </div>
-          <div class="card-row" data-open="modifiers-sheet">
-            <div class="row-icon" style="color:#4ade80;">&#x2261;</div>
-            <div class="row-main"><div class="row-title">Practice Modifiers</div></div>
-            <div class="row-trail"><span class="chevron">&rsaquo;</span></div>
-          </div>
-          <div class="card-row" data-open="rules-sheet">
-            <div class="row-icon">&#x2699;</div>
-            <div class="row-main"><div class="row-title">Game Rules</div></div>
-            <div class="row-trail"><span class="chevron">&rsaquo;</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sheet-section">
-        <div class="title">Progress</div>
-        <div class="card-group">
-          <div class="card-row"><div class="row-main"><div class="row-title">Mastery</div></div><div class="row-trail" id="prog-mastery">0</div></div>
-          <div class="card-row"><div class="row-main"><div class="row-title">Accuracy</div></div><div class="row-trail" id="prog-accuracy">—</div></div>
-          <div class="card-row"><div class="row-main"><div class="row-title">Best Streak</div></div><div class="row-trail" id="prog-best">0</div></div>
-          <div class="card-row"><div class="row-main"><div class="row-title">Hands Played</div></div><div class="row-trail" id="prog-hands">0</div></div>
-        </div>
-      </div>
-
-      <div class="sheet-section center" style="padding-top:4px;">
-        <button class="btn-deal" data-close="settings-sheet">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ STATS SHEET ============ -->
-  <div class="sheet" id="stats-sheet">
-    <div class="sheet-content">
-      <div class="sheet-header with-back">
-        <button class="back-btn" data-close="stats-sheet">&lsaquo;</button>
-        <h2>Statistics</h2>
-      </div>
-      <div class="sheet-section">
-        <div class="title">Overall</div>
-        <div class="stat-block"><span class="label">Mastery Points</span><span class="value" id="stats-mp">0</span></div>
-        <div class="stat-block"><span class="label">Hands Played</span><span class="value" id="stats-hands">0</span></div>
-        <div class="stat-block"><span class="label">Correct Decisions</span><span class="value" id="stats-correct">0</span></div>
-        <div class="stat-block"><span class="label">Accuracy</span><span class="value" id="stats-accuracy">—</span></div>
-        <div class="stat-block"><span class="label">Current Streak</span><span class="value streak" id="stats-current-streak">0</span></div>
-        <div class="stat-block"><span class="label">Best Streak</span><span class="value streak" id="stats-best-streak">0</span></div>
-      </div>
-      <div class="sheet-section">
-        <div class="title">By Zone</div>
-        <div class="card-group" id="zone-progress-list"></div>
-      </div>
-      <div class="sheet-section center">
-        <button class="btn-deal" id="reset-stats">Reset Statistics</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ MODIFIERS SHEET ============ -->
-  <div class="sheet" id="modifiers-sheet">
-    <div class="sheet-content">
-      <div class="sheet-header with-back">
-        <button class="back-btn" data-close="modifiers-sheet">&lsaquo;</button>
-        <h2>Practice Modifiers</h2>
-      </div>
-      <div class="sheet-section">
-        <div class="title">Challenge Modes</div>
-        <div class="card-group" id="modifiers-list"></div>
-      </div>
-      <div class="sheet-section" style="font-size:13px;color:var(--ink-dim);line-height:1.5;padding:8px 24px 20px;">
-        Modifiers add difficulty once unlocked. Reduced Feedback hides the correction message; No Chart hides the strategy reference.
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ RULES SHEET ============ -->
-  <div class="sheet" id="rules-sheet">
-    <div class="sheet-content">
-      <div class="sheet-header with-back">
-        <button class="back-btn" data-close="rules-sheet">&lsaquo;</button>
-        <h2>Game Rules</h2>
-      </div>
-
-      <div class="sheet-section">
-        <div class="title">Common Rules</div>
-        <div class="card-group">
-          <div class="card-row">
-            <div class="row-main"><div class="row-title">Decks</div></div>
-            <div class="row-trail"><span class="select-value">8</span><span class="arrow-updown">&#x21C5;</span></div>
-          </div>
-          <div class="card-row">
-            <div class="row-main"><div class="row-title">Dealer Hits Soft 17</div><div class="row-sub">S17 &mdash; Better for player</div></div>
-            <div class="row-trail"><div class="toggle" id="t-h17"></div></div>
-          </div>
-          <div class="card-row">
-            <div class="row-main"><div class="row-title">Double After Split</div><div class="row-sub">DAS &mdash; Better for player</div></div>
-            <div class="row-trail"><div class="toggle on" id="t-das"></div></div>
-          </div>
-          <div class="card-row">
-            <div class="row-main"><div class="row-title">Late Surrender</div><div class="row-sub">LS &mdash; Better for player</div></div>
-            <div class="row-trail"><div class="toggle" id="t-ls"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sheet-section">
-        <div class="title">Macau Rules</div>
-        <div class="card-group">
-          <div class="card-row">
-            <div class="row-main"><div class="row-title">Dealer Peeks</div><div class="row-sub">European style &mdash; off in Macau (ENHC)</div></div>
-            <div class="row-trail"><div class="toggle" id="t-peek"></div></div>
-          </div>
-          <div class="card-row">
-            <div class="row-main"><div class="row-title">Early Surrender vs 10</div><div class="row-sub">ES10 &mdash; Macau-specific</div></div>
-            <div class="row-trail"><div class="toggle on" id="t-es10"></div></div>
-          </div>
-          <div class="card-row">
-            <div class="row-main"><div class="row-title">Resplit Aces</div><div class="row-sub">NRSA &mdash; off in Macau</div></div>
-            <div class="row-trail"><div class="toggle" id="t-rsa"></div></div>
-          </div>
-          <div class="card-row">
-            <div class="row-main"><div class="row-title">Hit Split Aces</div><div class="row-sub">NHSA &mdash; one card on split aces</div></div>
-            <div class="row-trail"><div class="toggle" id="t-hsa"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sheet-section">
-        <div class="title">Current Rules</div>
-        <div class="card-group">
-          <div class="card-row"><div class="row-main"><div class="row-title">Decks</div></div><div class="row-trail">8</div></div>
-          <div class="card-row"><div class="row-main"><div class="row-title">Dealer</div></div><div class="row-trail">Stands Soft 17</div></div>
-          <div class="card-row"><div class="row-main"><div class="row-title">Double</div></div><div class="row-trail">Any Two Cards</div></div>
-          <div class="card-row"><div class="row-main"><div class="row-title">DAS</div></div><div class="row-trail">Yes</div></div>
-          <div class="card-row"><div class="row-main"><div class="row-title">Surrender</div></div><div class="row-trail">Early vs 10</div></div>
-          <div class="card-row"><div class="row-main"><div class="row-title">Blackjack</div></div><div class="row-trail">3:2</div></div>
-        </div>
-      </div>
-
-      <div class="sheet-section center" style="padding:8px 20px 24px;color:var(--ink-dim);font-size:12px;line-height:1.5;">
-        Strategy is fixed to Macau (8D, S17, DAS, ENHC, ES10).<br>Rule toggles are display-only in this build.
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ CHARTS SHEET ============ -->
-  <div class="sheet" id="charts-sheet">
-    <div class="sheet-content">
-      <div class="charts-tabs">
-        <div class="done-bar">
-          <button class="done-btn" data-close="charts-sheet">Done</button>
-        </div>
-        <div class="charts-tabs-row">
-          <button class="charts-tab active" data-chart="hard">Hard</button>
-          <button class="charts-tab" data-chart="soft">Soft</button>
-          <button class="charts-tab" data-chart="pairs">Pairs</button>
-        </div>
-      </div>
-      <iframe id="charts-frame" src="charts/hard.html" title="Strategy chart"></iframe>
-    </div>
-  </div>
-
+<!-- ===== FEEDBACK ===== -->
+<div id="feedback">
+  <div class="verdict" id="fb-verdict"></div>
+  <div class="correction" id="fb-correction"></div>
 </div>
 
+<!-- ===== CHART PANEL ===== -->
+<div id="chart-panel">
+  <div class="chart-hdr">
+    <div class="chart-title">Strategy Chart</div>
+    <div class="chart-tabs">
+      <button class="chart-tab active" data-ct="hard">Hard</button>
+      <button class="chart-tab" data-ct="soft">Soft</button>
+      <button class="chart-tab" data-ct="pairs">Pairs</button>
+    </div>
+    <button class="chart-close" id="chart-close">&#x2715;</button>
+  </div>
+  <div id="chart-wrap"><table class="ct" id="chart-table"></table></div>
+  <div class="chart-legend">
+    <div class="item"><div class="swatch sw-h">H</div> Hit</div>
+    <div class="item"><div class="swatch sw-s">S</div> Stand</div>
+    <div class="item"><div class="swatch sw-d">D</div> Double</div>
+    <div class="item"><div class="swatch sw-p">P</div> Split</div>
+  </div>
+</div>
+
+<!-- ===== POP BACKDROP ===== -->
+<div class="pop-backdrop" id="pop-bd"></div>
+
+<!-- Zone popover -->
+<div class="popover" id="zone-pop">
+  <div class="pop-row" data-zone="1"><div class="pop-main"><div class="pop-title">Zone 1</div><div class="pop-sub">Hard Totals</div></div><div class="pop-trail"></div></div>
+  <div class="pop-row" data-zone="2"><div class="pop-main"><div class="pop-title">Zone 2</div><div class="pop-sub">Soft Totals</div></div><div class="pop-trail"></div></div>
+  <div class="pop-row" data-zone="3"><div class="pop-main"><div class="pop-title">Zone 3</div><div class="pop-sub">Pairs</div></div><div class="pop-trail"></div></div>
+  <div class="pop-row" data-zone="4"><div class="pop-main"><div class="pop-title">Zone 4</div><div class="pop-sub">Full Strategy</div></div><div class="pop-trail"></div></div>
+</div>
+
+<!-- MP popover -->
+<div class="popover info" id="mp-pop">
+  <div class="pi-icon gold">&#x2605;</div>
+  <div class="pi-num" id="mp-pop-num">0</div>
+  <div class="pi-cap">Mastery Points</div>
+  <div class="pi-detail"><span>&#x1F512;</span><span id="mp-pop-next">—</span></div>
+</div>
+
+<!-- Streak popover -->
+<div class="popover info" id="streak-pop">
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">
+    <span style="font-size:22px;color:var(--fire);">&#x1F525;</span>
+    <span style="font-size:18px;font-weight:600;">Streak</span>
+  </div>
+  <div style="font-size:12px;color:var(--ink-dim);line-height:1.5;margin-bottom:10px;">Correct decisions in a row. Resets on any mistake.</div>
+  <div class="pi-stats">
+    <div><div class="pi-snum" id="streak-pop-cur">0</div><div class="pi-scap">Current</div></div>
+    <div><div class="pi-snum fire" id="streak-pop-best">0</div><div class="pi-scap">Best</div></div>
+  </div>
+</div>
+
+<!-- ===== SETTINGS SHEET ===== -->
+<div class="sheet" id="settings-sheet">
+  <div class="sheet-content" onclick="event.stopPropagation()">
+    <div class="sheet-hdr">
+      <div style="width:60px"></div>
+      <h2>Blackjack Gym</h2>
+      <button class="btn-done" data-close="settings-sheet">Done</button>
+    </div>
+
+    <div class="sec-title">Training Zone</div>
+    <div class="card-group" id="zone-list"></div>
+
+    <div class="sec-title"></div>
+    <div class="card-group">
+      <div class="crow tap" data-open="stats-sheet">
+        <div class="crow-icon">&#x1F4CA;</div>
+        <div class="crow-main"><div class="crow-title">Statistics</div></div>
+        <div class="crow-trail"><span class="chev">&rsaquo;</span></div>
+      </div>
+      <div class="crow tap" data-open="modifiers-sheet">
+        <div class="crow-icon">&#x2261;</div>
+        <div class="crow-main"><div class="crow-title">Practice Modifiers</div></div>
+        <div class="crow-trail"><span class="chev">&rsaquo;</span></div>
+      </div>
+      <div class="crow tap" data-open="themes-sheet">
+        <div class="crow-icon">&#x1F3A8;</div>
+        <div class="crow-main"><div class="crow-title">Table Themes</div></div>
+        <div class="crow-trail"><span class="chev">&rsaquo;</span></div>
+      </div>
+      <div class="crow tap" data-open="rules-sheet">
+        <div class="crow-icon" style="color:var(--ink-dim);">&#x2699;</div>
+        <div class="crow-main"><div class="crow-title">Game Rules</div></div>
+        <div class="crow-trail"><span class="chev">&rsaquo;</span></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Progress</div>
+    <div class="card-group">
+      <div class="crow"><div class="crow-main"><div class="crow-title">Mastery</div></div><div class="crow-trail" id="prog-mp">0</div></div>
+      <div class="crow"><div class="crow-main"><div class="crow-title">Accuracy</div></div><div class="crow-trail" id="prog-acc">—</div></div>
+      <div class="crow"><div class="crow-main"><div class="crow-title">Best Streak</div></div><div class="crow-trail" id="prog-best">0</div></div>
+    </div>
+
+    <div class="sec-title">Accessibility</div>
+    <div class="card-group">
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Preferred Hand</div></div>
+        <div class="crow-trail">
+          <select id="hand-select" style="background:transparent;border:none;color:var(--ink-dim);font-family:inherit;font-size:14px;">
+            <option value="right">Right-Handed</option>
+            <option value="left">Left-Handed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:16px 20px;display:flex;gap:12px;justify-content:center;">
+      <button class="btn-done" id="export-btn">Export Stats</button>
+      <button class="btn-done" id="import-btn">Import Stats</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+
+    <div style="text-align:center;padding:4px 20px 16px;">
+      <button class="btn-done" data-close="settings-sheet" style="background:transparent;color:var(--good);">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STATS SHEET ===== -->
+<div class="sheet" id="stats-sheet">
+  <div class="sheet-content">
+    <div class="sheet-hdr">
+      <button class="btn-back" data-close="stats-sheet">&lsaquo;</button>
+      <h2>Statistics</h2>
+      <div style="width:60px"></div>
+    </div>
+    <div class="sec-title">Overview</div>
+    <div class="stat-block">
+      <div class="stat-row"><span class="label">Total Decisions</span><span class="value" id="st-hands">0</span></div>
+      <div class="stat-row"><span class="label">Correct Decisions</span><span class="value" id="st-correct">0</span></div>
+      <div class="stat-row"><span class="label">Accuracy</span><span class="value gold" id="st-acc">—</span></div>
+      <div class="stat-row"><span class="label">Mastery Points</span><span class="value gold" id="st-mp">0</span></div>
+    </div>
+    <div class="sec-title">Streaks</div>
+    <div class="stat-block">
+      <div class="stat-row"><span class="label">Current Streak</span><span class="value streak" id="st-streak">0</span></div>
+      <div class="stat-row"><span class="label">Best Streak</span><span class="value streak" id="st-best">0</span></div>
+    </div>
+    <div class="sec-title">By Zone</div>
+    <div class="stat-block" id="zone-prog-list"></div>
+    <div style="padding:16px 20px;text-align:center;">
+      <button class="btn-done" id="reset-btn" style="color:var(--bad);background:rgba(239,68,68,.12);">Reset Statistics</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODIFIERS SHEET ===== -->
+<div class="sheet" id="modifiers-sheet">
+  <div class="sheet-content">
+    <div class="sheet-hdr">
+      <button class="btn-back" data-close="modifiers-sheet">&lsaquo;</button>
+      <h2>Practice Modifiers</h2>
+      <div style="width:60px"></div>
+    </div>
+    <div class="sec-title">Challenge Modes</div>
+    <div class="card-group" id="modifiers-list"></div>
+    <div style="padding:14px 20px;font-size:13px;color:var(--ink-dim);line-height:1.55;">
+      Modifiers add difficulty once unlocked with Mastery Points.
+    </div>
+  </div>
+</div>
+
+<!-- ===== THEMES SHEET ===== -->
+<div class="sheet" id="themes-sheet">
+  <div class="sheet-content">
+    <div class="sheet-hdr">
+      <button class="btn-back" data-close="themes-sheet">&lsaquo;</button>
+      <h2>Table Themes</h2>
+      <div style="width:60px"></div>
+    </div>
+    <div class="sec-title">Select Theme</div>
+    <div class="card-group" id="themes-list"></div>
+  </div>
+</div>
+
+<!-- ===== RULES SHEET ===== -->
+<div class="sheet" id="rules-sheet">
+  <div class="sheet-content">
+    <div class="sheet-hdr">
+      <button class="btn-back" data-close="rules-sheet">&lsaquo;</button>
+      <h2>Game Rules</h2>
+      <div style="width:60px"></div>
+    </div>
+
+    <div class="sec-title">Macau Presets</div>
+    <div class="card-group">
+      <div class="crow tap" onclick="applyPreset('macau')">
+        <div class="crow-main"><div class="crow-title green">Macau Standard</div><div class="crow-sub">8D · S17 · DAS · ENHC · ES10 — All major properties</div></div>
+      </div>
+      <div class="crow tap" onclick="applyPreset('macau_obo')">
+        <div class="crow-main"><div class="crow-title green">Grand Lisboa / MGM (OBO)</div><div class="crow-sub">Same rules · Original Bet Only on dealer blackjack</div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Other Presets</div>
+    <div class="card-group">
+      <div class="crow tap" onclick="applyPreset('vegas')">
+        <div class="crow-main"><div class="crow-title green">Vegas Strip</div><div class="crow-sub">6D · S17 · DAS · Peek · Late Surrender</div></div>
+      </div>
+      <div class="crow tap" onclick="applyPreset('european')">
+        <div class="crow-main"><div class="crow-title green">European</div><div class="crow-sub">6D · S17 · DAS · ENHC · No Surrender</div></div>
+      </div>
+      <div class="crow tap" onclick="applyPreset('atlantic')">
+        <div class="crow-main"><div class="crow-title green">Atlantic City</div><div class="crow-sub">8D · S17 · DAS · Peek · Late Surrender</div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Common Rules</div>
+    <div class="card-group">
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Decks</div></div>
+        <div class="crow-trail">
+          <select id="r-decks" style="background:transparent;border:none;color:var(--ink-dim);font-family:inherit;font-size:14px;">
+            <option value="1">1</option><option value="2">2</option>
+            <option value="6">6</option><option value="8" selected>8</option>
+          </select>
+        </div>
+      </div>
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Dealer Hits Soft 17</div><div class="crow-sub">H17 — worse for player</div></div>
+        <div class="crow-trail"><div class="toggle" id="t-h17"></div></div>
+      </div>
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Double After Split</div><div class="crow-sub">DAS — better for player</div></div>
+        <div class="crow-trail"><div class="toggle on" id="t-das"></div></div>
+      </div>
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Late Surrender</div><div class="crow-sub">LS — better for player</div></div>
+        <div class="crow-trail"><div class="toggle" id="t-ls"></div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Advanced Rules</div>
+    <div class="card-group">
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">No Hole Card (ENHC)</div><div class="crow-sub">Dealer doesn't peek — Macau standard</div></div>
+        <div class="crow-trail"><div class="toggle on" id="t-enhc"></div></div>
+      </div>
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Early Surrender vs 10</div><div class="crow-sub">ES10 — Macau specific</div></div>
+        <div class="crow-trail"><div class="toggle on" id="t-es10"></div></div>
+      </div>
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Original Bet Only</div><div class="crow-sub">OBO — lose original bet only to dealer BJ</div></div>
+        <div class="crow-trail"><div class="toggle" id="t-obo"></div></div>
+      </div>
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Resplit Aces</div><div class="crow-sub">RSA — off in Macau</div></div>
+        <div class="crow-trail"><div class="toggle" id="t-rsa"></div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Current Rules</div>
+    <div class="card-group" id="current-rules-display"></div>
+  </div>
+</div>
+
+</div><!-- #app -->
 <script>
 'use strict';
 
-/* =========================================================
-   STRATEGY DATA — Macau (8D, S17, DAS, ENHC, ES10)
-   Strings indexed by dealer upcard 0-9 = [2,3,4,5,6,7,8,9,10,A]
-   Codes: H=Hit, S=Stand, D=Double else Hit, X=Double else Stand (Ds),
-          P=Split, R=Surrender else Hit
-========================================================= */
+/* ============================================================
+   STRATEGY ENGINE — dynamic tables from rules
+   Index 0-9 = dealer upcard 2,3,4,5,6,7,8,9,10,A
+   Codes: H=Hit S=Stand D=Double(else H) X=Double(else S) P=Split R=Surrender(else H)
+============================================================ */
 
-const HARD = {
-  5:  'HHHHHHHHHH',
-  6:  'HHHHHHHHHH',
-  7:  'HHHHHHHHHH',
-  8:  'HHHHHHHHHH',
-  9:  'HDDDDHHHHH',
-  10: 'DDDDDDDDHH',
-  11: 'DDDDDDDDDH',  // ENHC: H vs A
-  12: 'HHSSSHHHHH',
-  13: 'SSSSSHHHHH',
-  14: 'SSSSSHHHHH',
-  15: 'SSSSSHHHRH',  // ES10: R vs 10 only
-  16: 'SSSSSHHHRH',
-  17: 'SSSSSSSSSS',
-  18: 'SSSSSSSSSS',
-  19: 'SSSSSSSSSS',
-  20: 'SSSSSSSSSS',
-  21: 'SSSSSSSSSS'
-};
+function buildTables(rules) {
+  /* ---- HARD ---- */
+  const H = {
+    5:'HHHHHHHHHH', 6:'HHHHHHHHHH', 7:'HHHHHHHHHH', 8:'HHHHHHHHHH',
+    9:'HDDDDHHHHH', 10:'DDDDDDDDHH',
+    11: rules.enhc && !rules.obo ? 'DDDDDDDDDH' : 'DDDDDDDDDD',
+    12:'HHSSSHHHHH',
+    13:'SSSSSHHHHH', 14:'SSSSSHHHHH',
+    15:'SSSSSHHHHH', 16:'SSSSSHHHHH',
+    17:'SSSSSSSSSS', 18:'SSSSSSSSSS', 19:'SSSSSSSSSS', 20:'SSSSSSSSSS', 21:'SSSSSSSSSS'
+  };
 
-// Soft totals 13-20 (A,2 through A,9)
-const SOFT = {
-  13: 'HHHDDHHHHH',  // A,2
-  14: 'HHDDDHHHHH',  // A,3
-  15: 'HHDDDHHHHH',  // A,4
-  16: 'HHDDDHHHHH',  // A,5
-  17: 'HDDDDHHHHH',  // A,6
-  18: 'SXXXXSSHHS',  // A,7  Ds vs 3-6
-  19: 'SSSSSSSSSS',
-  20: 'SSSSSSSSSS',
-  21: 'SSSSSSSSSS'
-};
+  // Surrender — apply after base table
+  if (rules.es10) {
+    // ES10: surrender only vs 10 (index 8)
+    H[15] = H[15].slice(0,8) + 'R' + H[15].slice(9);
+    H[16] = H[16].slice(0,8) + 'R' + H[16].slice(9);
+  } else if (rules.ls) {
+    // Late Surrender: 15 vs 10, 16 vs 9/10, (17 vs A if H17)
+    H[15] = H[15].slice(0,8) + 'R' + H[15].slice(9);
+    H[16] = H[16].slice(0,7) + 'RR' + H[16].slice(9);
+    if (rules.h17) {
+      H[17] = H[17].slice(0,9) + 'R';
+      H[16] = H[16].slice(0,9) + 'R';
+    }
+  }
 
-// Pair splits — keyed by rank (A or 2-10)
-const PAIRS = {
-  'A':  'PPPPPPPPPP',
-  '10': 'SSSSSSSSSS',
-  '9':  'PPPPPSPPSS',
-  '8':  'PPPPPPPPPH',  // ENHC: H vs A
-  '7':  'PPPPPPHHHH',
-  '6':  'PPPPPHHHHH',
-  '5':  'DDDDDDDDHH',  // never split — play as 10
-  '4':  'HHHPPHHHHH',
-  '3':  'PPPPPPHHHH',
-  '2':  'PPPPPPHHHH'
-};
+  /* ---- SOFT ---- */
+  const S = {
+    13:'HHHDDHHHHH', 14:'HHDDDHHHHH', 15:'HHDDDHHHHH', 16:'HHDDDHHHHH',
+    17:'HDDDDHHHHH',
+    18: rules.h17 ? 'SXXXXSSHHH' : 'SXXXXSSHHS',
+    19:'SSSSSSSSSS', 20:'SSSSSSSSSS', 21:'SSSSSSSSSS'
+  };
+  // H17: A,8 vs 6 = Ds (index 4)
+  if (rules.h17) {
+    S[19] = 'SSSSS' + 'X' + 'SSSS'; // A,8 vs 6 becomes Ds under H17
+  }
 
-const SUITS = ['♠', '♥', '♦', '♣']; // ♠ ♥ ♦ ♣
-const RED_SUITS = new Set(['♥', '♦']);
+  /* ---- PAIRS ---- */
+  const P = {
+    'A' : 'PPPPPPPPPP',
+    '10': 'SSSSSSSSSS',
+    '9' : 'PPPPPSPPSS',
+    '8' : (rules.enhc && !rules.obo) ? 'PPPPPPPPPH' : 'PPPPPPPPPP',
+    '7' : 'PPPPPPHHHH',
+    '6' : rules.das ? 'PPPPPHHHHH' : 'HPPPPHHHHH',
+    '5' : 'DDDDDDDDHH',
+    '4' : rules.das ? 'HHHPPHHHHH' : 'HHHHHHHHHH',
+    '3' : rules.das ? 'PPPPPPHHHH' : 'HHPPPPHHHH',
+    '2' : rules.das ? 'PPPPPPHHHH' : 'HHPPPPHHHH'
+  };
+
+  return { hard: H, soft: S, pairs: P };
+}
+
+/* ============================================================
+   CONSTANTS
+============================================================ */
+const SUITS = ['♠','♥','♦','♣'];
+const RED_SUITS = new Set(['♥','♦']);
 const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
-// ===== Zone definitions =====
 const ZONES = [
-  { id: 1, name: 'Hard Totals',   sub: 'Learn decisions for hard hands (no aces counting as 11)',  unlock: 0 },
-  { id: 2, name: 'Soft Totals',   sub: 'Add soft hands (hands with an ace counting as 11)',         unlock: 500 },
-  { id: 3, name: 'Pairs',         sub: 'Master pair splitting decisions',                            unlock: 1500 },
-  { id: 4, name: 'Full Strategy', sub: 'Practice the complete basic strategy',                       unlock: 3000 }
+  { id:1, name:'Hard Totals',   sub:'Learn decisions for hard hands', unlock:0 },
+  { id:2, name:'Soft Totals',   sub:'Add soft hands with an ace counting as 11', unlock:500 },
+  { id:3, name:'Pairs',         sub:'Master pair splitting decisions', unlock:1500 },
+  { id:4, name:'Full Strategy', sub:'Practice the complete basic strategy', unlock:3000 }
 ];
 
 const MODIFIERS = [
-  { id: 'time',   name: 'Time Pressure',     icon: '⏱', unlock: 1000 },
-  { id: 'distr',  name: 'Distractions',      icon: '✨', unlock: 1500 },
-  { id: 'rfb',    name: 'Reduced Feedback',  icon: '\u{1F441}', unlock: 2000 },
-  { id: 'noch',   name: 'No Chart',          icon: '\u{1F4CA}', unlock: 2500 }
+  { id:'time',  name:'Time Pressure',    icon:'⏱', unlock:1000 },
+  { id:'distr', name:'Distractions',     icon:'✨', unlock:1500 },
+  { id:'rfb',   name:'Reduced Feedback', icon:'🙈', unlock:2000 },
+  { id:'noch',  name:'No Chart',         icon:'📊', unlock:2500 }
 ];
 
-/* =========================================================
-   STATE — persisted to localStorage
-========================================================= */
+const THEMES = {
+  classic:  { name:'Classic Green',   felt:'#0a3a1f', deep:'#062814', edge:'#041a0d', swatch:'#1a5c32' },
+  midnight: { name:'Midnight Blue',   felt:'#0a1535', deep:'#06102a', edge:'#040b1d', swatch:'#1a2a5c' },
+  royale:   { name:'Casino Royale',   felt:'#2a0a18', deep:'#1a0610', edge:'#0d030a', swatch:'#4a1428' },
+  emerald:  { name:'Emerald',         felt:'#0a4825', deep:'#063318', edge:'#04200f', swatch:'#1a7a3c' }
+};
 
-const STATE_KEY = 'mbjt_state_v1';
+const PRESETS = {
+  macau:     { decks:8, h17:false, das:true, enhc:true, es10:true, ls:false, obo:false, rsa:false },
+  macau_obo: { decks:8, h17:false, das:true, enhc:true, es10:true, ls:false, obo:true,  rsa:false },
+  vegas:     { decks:6, h17:false, das:true, enhc:false, es10:false, ls:true,  obo:false, rsa:true  },
+  european:  { decks:6, h17:false, das:true, enhc:true,  es10:false, ls:false, obo:false, rsa:false },
+  atlantic:  { decks:8, h17:false, das:true, enhc:false, es10:false, ls:true,  obo:false, rsa:true  }
+};
 
-const defaultState = {
-  mp: 0,
-  streak: 0,
-  bestStreak: 0,
-  zone: 1,
-  hands: 0,
-  correct: 0,
-  zoneStats: { 1: { c: 0, t: 0 }, 2: { c: 0, t: 0 }, 3: { c: 0, t: 0 }, 4: { c: 0, t: 0 } }
+/* ============================================================
+   STATE
+============================================================ */
+const STATE_KEY = 'mbjt_v2';
+const DEFAULT_RULES = { decks:8, h17:false, das:true, enhc:true, es10:true, ls:false, obo:false, rsa:false };
+const DEFAULT_STATE = {
+  mp:0, streak:0, bestStreak:0, zone:1, hands:0, correct:0,
+  zoneStats:{ 1:{c:0,t:0}, 2:{c:0,t:0}, 3:{c:0,t:0}, 4:{c:0,t:0} },
+  rules: { ...DEFAULT_RULES },
+  theme:'classic',
+  preferredHand:'right'
 };
 
 let state = loadState();
+let STRAT = buildTables(state.rules);
 
 function loadState() {
   try {
     const raw = localStorage.getItem(STATE_KEY);
-    if (!raw) return { ...defaultState };
+    if (!raw) return deepClone(DEFAULT_STATE);
     const s = JSON.parse(raw);
-    return { ...defaultState, ...s, zoneStats: { ...defaultState.zoneStats, ...(s.zoneStats || {}) } };
-  } catch (e) {
-    return { ...defaultState };
-  }
+    // Merge to catch new fields from updates
+    return {
+      ...deepClone(DEFAULT_STATE), ...s,
+      rules: { ...deepClone(DEFAULT_RULES), ...(s.rules || {}) },
+      zoneStats: { ...deepClone(DEFAULT_STATE.zoneStats), ...(s.zoneStats || {}) }
+    };
+  } catch(e) { return deepClone(DEFAULT_STATE); }
 }
 
 function saveState() {
-  try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {}
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch(e) {}
 }
 
-function isZoneUnlocked(z) {
-  return state.mp >= ZONES[z - 1].unlock;
-}
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 
-/* =========================================================
-   CARDS / HAND LOGIC
-========================================================= */
+function isZoneUnlocked(z) { return state.mp >= ZONES[z-1].unlock; }
 
+/* ============================================================
+   CARD HELPERS
+============================================================ */
 function dealerIndex(rank) {
   if (rank === 'A') return 9;
-  if (rank === '10' || rank === 'J' || rank === 'Q' || rank === 'K') return 8;
-  return parseInt(rank, 10) - 2;
+  if (['10','J','Q','K'].includes(rank)) return 8;
+  return parseInt(rank,10) - 2;
 }
-
 function rankValue(rank) {
   if (rank === 'A') return 11;
-  if (rank === 'J' || rank === 'Q' || rank === 'K') return 10;
-  return parseInt(rank, 10);
+  if (['J','Q','K'].includes(rank)) return 10;
+  return parseInt(rank,10);
 }
-
-function randSuit() { return SUITS[Math.floor(Math.random() * 4)]; }
-
-function makeCard(rank) {
-  const suit = randSuit();
-  return { rank, suit, red: RED_SUITS.has(suit) };
-}
+function pairKey(card) { return ['J','Q','K'].includes(card.rank) ? '10' : card.rank; }
+function randSuit() { return SUITS[Math.floor(Math.random()*4)]; }
+function makeCard(rank) { const s=randSuit(); return {rank,suit:s,red:RED_SUITS.has(s)}; }
+function pickRank() { return RANKS[Math.floor(Math.random()*RANKS.length)]; }
 
 function evalHand(hand) {
-  // Returns { total, soft, isPair, isBlackjack, busted }
-  let total = 0;
-  let aces = 0;
-  for (const c of hand) {
-    total += rankValue(c.rank);
-    if (c.rank === 'A') aces++;
-  }
-  let soft = aces > 0 && total <= 21;
-  while (total > 21 && aces > 0) {
-    total -= 10;
-    aces--;
-    if (aces === 0) soft = false;
-  }
-  // After reduction, soft = there's still an ace counted as 11
-  soft = false;
-  let acesAs11 = 0;
-  // Recompute: count aces as 1 first, then promote one to 11 if total <= 21
-  let t = 0;
-  let aceCount = 0;
-  for (const c of hand) {
-    if (c.rank === 'A') { aceCount++; t += 1; }
-    else t += rankValue(c.rank);
-  }
-  if (aceCount > 0 && t + 10 <= 21) {
-    t += 10;
-    soft = true;
-  }
-  total = t;
-  const isPair = hand.length === 2 && pairKey(hand[0]) === pairKey(hand[1]);
-  const isBlackjack = hand.length === 2 && total === 21;
-  const busted = total > 21;
-  return { total, soft, isPair, isBlackjack, busted };
+  let t=0, a=0;
+  for (const c of hand) { if(c.rank==='A'){a++;t+=1;}else t+=rankValue(c.rank); }
+  let soft = false;
+  if (a>0 && t+10<=21) { t+=10; soft=true; }
+  const isPair = hand.length===2 && pairKey(hand[0])===pairKey(hand[1]);
+  return { total:t, soft, isPair, busted:t>21 };
 }
 
-function pairKey(card) {
-  if (card.rank === 'J' || card.rank === 'Q' || card.rank === 'K') return '10';
-  return card.rank;
-}
-
-/* =========================================================
+/* ============================================================
    STRATEGY LOOKUP
-========================================================= */
-
+============================================================ */
 function correctAction(playerHand, dealerCard, opts) {
-  // opts: { canDouble, canSplit, canSurrender }
   const ev = evalHand(playerHand);
   const di = dealerIndex(dealerCard.rank);
   let code;
 
   if (opts.canSplit && ev.isPair) {
-    const k = pairKey(playerHand[0]);
-    code = PAIRS[k][di];
-    // Pair-of-5 special case is encoded as 'D' already; pair-of-10 is 'S'
+    code = STRAT.pairs[pairKey(playerHand[0])][di];
   } else if (ev.soft) {
-    const t = Math.min(21, ev.total);
-    code = SOFT[t][di];
+    code = STRAT.soft[Math.min(21, ev.total)][di];
   } else {
-    let t = ev.total;
-    if (t < 5) t = 5;
-    if (t > 21) t = 21;
-    code = HARD[t][di];
+    const t = Math.min(Math.max(ev.total, 5), 21);
+    code = STRAT.hard[t][di];
   }
 
-  // Resolve action codes against availability
   switch (code) {
     case 'H': return 'H';
     case 'S': return 'S';
-    case 'P': return opts.canSplit ? 'P' : (ev.soft ? 'H' : (ev.total >= 17 ? 'S' : 'H'));
     case 'D': return opts.canDouble ? 'D' : 'H';
-    case 'X': return opts.canDouble ? 'D' : 'S'; // Ds — double else stand
+    case 'X': return opts.canDouble ? 'D' : 'S';
+    case 'P': return opts.canSplit  ? 'P' : (ev.total>=17 ? 'S' : 'H');
     case 'R': return opts.canSurrender ? 'R' : 'H';
     default:  return 'H';
   }
 }
 
-/* =========================================================
+/* ============================================================
    SCENARIO GENERATION
-========================================================= */
-
-function pickRank() {
-  const r = RANKS[Math.floor(Math.random() * RANKS.length)];
-  return r;
-}
-
+============================================================ */
 function generateScenario(zone) {
-  // Returns { player: [c1, c2], dealer: card }
-  const dealer = makeCard(pickRandomDealerRank());
+  const dealer = makeCard(RANKS[Math.floor(Math.random()*RANKS.length)]);
   let player;
-
-  if (zone === 1) {
-    player = generateHardHand();
-  } else if (zone === 2) {
-    player = generateSoftHand();
-  } else if (zone === 3) {
-    player = generatePair();
-  } else {
-    // Zone 4: full mix
+  if (zone===1) player = genHard();
+  else if (zone===2) player = genSoft();
+  else if (zone===3) player = genPair();
+  else {
     const r = Math.random();
-    if (r < 0.13) player = generatePair();
-    else if (r < 0.40) player = generateSoftHand();
-    else player = generateHardHand();
+    if (r<0.15) player = genPair();
+    else if (r<0.45) player = genSoft();
+    else player = genHard();
   }
   return { player, dealer };
 }
 
-function pickRandomDealerRank() {
-  // Roughly weighted toward 10s as in real shoe (10/J/Q/K)
-  const pool = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function generateHardHand() {
-  // Random 2-card hand without an active soft ace and not a pair (mostly)
-  for (let i = 0; i < 50; i++) {
-    const r1 = pickRank();
-    const r2 = pickRank();
-    if (pairKey({rank: r1}) === pairKey({rank: r2})) continue; // skip pairs
-    if (r1 === 'A' || r2 === 'A') continue; // skip soft
-    const c1 = makeCard(r1);
-    const c2 = makeCard(r2);
-    const ev = evalHand([c1, c2]);
-    if (ev.total >= 5 && ev.total <= 20 && !ev.soft) return [c1, c2];
+function genHard() {
+  for (let i=0;i<50;i++) {
+    const r1=pickRank(), r2=pickRank();
+    if (pairKey({rank:r1})===pairKey({rank:r2})) continue;
+    if (r1==='A'||r2==='A') continue;
+    const c1=makeCard(r1), c2=makeCard(r2);
+    const ev=evalHand([c1,c2]);
+    if (!ev.soft && ev.total>=5 && ev.total<=20) return [c1,c2];
   }
-  // fallback
-  return [makeCard('5'), makeCard('7')];
+  return [makeCard('5'),makeCard('7')];
+}
+function genSoft() {
+  const other=['2','3','4','5','6','7','8','9'];
+  const r=other[Math.floor(Math.random()*other.length)];
+  const c1=makeCard('A'), c2=makeCard(r);
+  return Math.random()<.5 ? [c1,c2] : [c2,c1];
+}
+function genPair() {
+  const rs=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  const r=rs[Math.floor(Math.random()*rs.length)];
+  let s1=randSuit(), s2=randSuit();
+  while(s1===s2) s2=randSuit();
+  return [{rank:r,suit:s1,red:RED_SUITS.has(s1)},{rank:r,suit:s2,red:RED_SUITS.has(s2)}];
 }
 
-function generateSoftHand() {
-  // Always one ace + a 2-9 (so soft 13-20)
-  const others = ['2','3','4','5','6','7','8','9'];
-  const r = others[Math.floor(Math.random() * others.length)];
-  const aceFirst = Math.random() < 0.5;
-  const c1 = makeCard('A');
-  const c2 = makeCard(r);
-  return aceFirst ? [c1, c2] : [c2, c1];
-}
-
-function generatePair() {
-  const rs = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-  const r = rs[Math.floor(Math.random() * rs.length)];
-  // Use same rank twice (different suits)
-  let s1 = randSuit(), s2 = randSuit();
-  while (s1 === s2) s2 = randSuit();
-  return [
-    { rank: r, suit: s1, red: RED_SUITS.has(s1) },
-    { rank: r, suit: s2, red: RED_SUITS.has(s2) }
-  ];
-}
-
-/* =========================================================
-   GAME STATE / FLOW
-========================================================= */
-
-let scenario = null;       // { player, dealer }
-let handOver = false;      // true after bust/double/stand/split/surrender
-let mistakeMade = false;   // for current scenario
+/* ============================================================
+   GAME FLOW
+============================================================ */
+let scenario = null;
+let handOver = false;
+let mistakeMade = false;
+let chartType = 'hard'; // current chart tab
 
 function newScenario() {
   scenario = generateScenario(state.zone);
   handOver = false;
   mistakeMade = false;
+  // Auto-select chart tab for current zone
+  if (state.zone===2) chartType='soft';
+  else if (state.zone===3) chartType='pairs';
+  else if (state.zone!==4) chartType='hard';
   render();
+  if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
 }
 
 function applyAction(code) {
   if (handOver) return;
   const ev = evalHand(scenario.player);
+  const isFirst = scenario.player.length===2;
   const opts = {
-    canDouble: scenario.player.length === 2,
-    canSplit:  scenario.player.length === 2 && ev.isPair && state.zone !== 2 && state.zone !== 1,
-    canSurrender: scenario.player.length === 2
+    canDouble: isFirst,
+    canSplit: isFirst && ev.isPair && state.zone>=3,
+    canSurrender: isFirst
   };
-  // Zone-aware: in Zone 1 (hard) and Zone 2 (soft), no split. Zone 3+ allow split.
-  // Zone 1 Soft hands shouldn't appear, but guard anyway.
-  if (state.zone === 3) opts.canSplit = ev.isPair && scenario.player.length === 2;
-  if (state.zone === 4) opts.canSplit = ev.isPair && scenario.player.length === 2;
-
   const correct = correctAction(scenario.player, scenario.dealer, opts);
 
-  if (code === correct) {
-    onCorrect(code, opts);
-  } else {
-    onWrong(code, correct);
-  }
+  if (code===correct) onCorrect(code);
+  else onWrong(code, correct);
 }
 
-function onCorrect(code, opts) {
+function onCorrect(code) {
   if (!mistakeMade) {
-    state.streak += 1;
+    state.streak++;
     if (state.streak > state.bestStreak) state.bestStreak = state.streak;
-    state.mp += 1;
-    state.correct += 1;
-    state.zoneStats[state.zone].c += 1;
+    state.mp++;
+    state.correct++;
+    state.zoneStats[state.zone].c++;
   }
-  flashFeedback(true, '');
+  flash(true,'');
+  state.hands++;
+  state.zoneStats[state.zone].t++;
+  saveState();
+  syncSidebar();
 
-  // Apply action effects
-  if (code === 'H') {
-    // Draw a card; if not bust, continue the hand
+  if (code==='H') {
     scenario.player.push(makeCard(pickRank()));
-    const ev = evalHand(scenario.player);
-    state.hands += 1;
-    state.zoneStats[state.zone].t += 1;
-    saveState();
+    const ev2 = evalHand(scenario.player);
     setTimeout(() => {
-      if (ev.busted) {
-        handOver = true;
-        render();
-      } else if (ev.total === 21) {
-        handOver = true;
-        render();
-        setTimeout(newScenario, 600);
-      } else {
-        render();
-      }
-    }, 350);
-  } else if (code === 'D') {
-    // One card and stop
+      if (ev2.busted || ev2.total===21) { handOver=true; render(); if (!ev2.busted) setTimeout(newScenario,500); }
+      else render();
+      if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
+    }, 300);
+  } else if (code==='D') {
     scenario.player.push(makeCard(pickRank()));
-    handOver = true;
-    state.hands += 1;
-    state.zoneStats[state.zone].t += 1;
-    saveState();
-    setTimeout(() => { render(); setTimeout(newScenario, 700); }, 350);
+    handOver=true;
+    setTimeout(() => { render(); setTimeout(newScenario,700); }, 300);
   } else {
-    // Stand, Split, Surrender — close out
-    handOver = true;
-    state.hands += 1;
-    state.zoneStats[state.zone].t += 1;
-    saveState();
-    setTimeout(newScenario, 600);
+    handOver=true;
+    setTimeout(newScenario, 550);
   }
-  syncStats();
 }
 
 function onWrong(picked, correct) {
   if (!mistakeMade) {
-    mistakeMade = true;
-    state.streak = 0;
-    state.hands += 1;
-    state.zoneStats[state.zone].t += 1;
+    mistakeMade=true;
+    state.streak=0;
+    state.hands++;
+    state.zoneStats[state.zone].t++;
     saveState();
   }
-  const cName = actionFullName(correct);
-  const pName = actionFullName(picked);
-  flashFeedback(false, 'Correct: <strong>' + cName + '</strong> &middot; You picked: ' + pName);
+  flash(false, 'Correct: <strong>'+actionName(correct)+'</strong> &middot; You chose: '+actionName(picked));
+  syncSidebar();
   setTimeout(newScenario, 1400);
-  syncStats();
 }
 
-function actionFullName(code) {
-  switch (code) {
-    case 'H': return 'Hit';
-    case 'S': return 'Stand';
-    case 'D': return 'Double';
-    case 'P': return 'Split';
-    case 'R': return 'Surrender';
-    default: return code;
-  }
-}
+function actionName(c) { return {H:'Hit',S:'Stand',D:'Double',P:'Split',R:'Surrender'}[c]||c; }
 
-/* =========================================================
+/* ============================================================
    RENDERING
-========================================================= */
-
-const $ = (id) => document.getElementById(id);
+============================================================ */
+const $=id=>document.getElementById(id);
 
 function render() {
-  renderDealer();
-  renderPlayer();
+  renderDealerHand();
+  renderPlayerHand();
   renderActions();
-  renderSidebar();
+  syncSidebar();
   renderZoneLabel();
 }
 
-function renderDealer() {
-  const el = $('dealer-hand');
-  el.innerHTML = '';
+function renderDealerHand() {
+  const el=$('dealer-hand'); el.innerHTML='';
   if (!scenario) return;
-  // Back card
   el.appendChild(makeCardEl('back'));
-  // Face up dealer card
   el.appendChild(makeCardEl('face', scenario.dealer));
 }
 
-function renderPlayer() {
-  const el = $('player-hand');
-  el.innerHTML = '';
+function renderPlayerHand() {
+  const el=$('player-hand'); el.innerHTML='';
   if (!scenario) return;
-  for (const c of scenario.player) {
-    el.appendChild(makeCardEl('face', c));
-  }
-  const ev = evalHand(scenario.player);
-  const totalEl = $('player-total');
-  const bustEl = $('bust-label');
-  const zoneEl = $('zone-label');
+  for (const c of scenario.player) el.appendChild(makeCardEl('face',c));
+  const ev=evalHand(scenario.player);
+  const tot=$('p-total'), bust=$('bust-lbl'), zl=$('zone-lbl');
   if (ev.busted) {
-    totalEl.classList.add('hidden');
-    zoneEl.classList.add('hidden');
-    bustEl.classList.remove('hidden');
-    bustEl.textContent = 'Bust';
+    tot.style.display='none'; zl.style.display='none'; bust.style.display='block';
   } else {
-    totalEl.classList.remove('hidden');
-    zoneEl.classList.remove('hidden');
-    bustEl.classList.add('hidden');
-    let label;
-    if (ev.isPair && scenario.player.length === 2 && (state.zone === 3 || state.zone === 4)) {
-      label = 'Pair of ' + pairKey(scenario.player[0]) + 's';
-    } else if (ev.soft) {
-      label = 'Soft ' + ev.total;
-    } else {
-      label = '' + ev.total;
-    }
-    totalEl.textContent = label;
+    tot.style.display=''; zl.style.display=''; bust.style.display='none';
+    const ev2=evalHand(scenario.player);
+    const isPairHand=ev2.isPair&&scenario.player.length===2&&state.zone>=3;
+    tot.textContent = isPairHand ? 'Pair of '+pairKey(scenario.player[0])+'s' :
+                      ev2.soft   ? 'Soft '+ev2.total :
+                      ''+ev2.total;
   }
 }
 
 function renderActions() {
-  const el = $('actions');
-  el.innerHTML = '';
-
+  const el=$('actions'); el.innerHTML='';
   if (handOver) {
-    const btn = document.createElement('button');
-    btn.className = 'btn-deal';
-    btn.textContent = 'Deal';
-    btn.style.gridColumn = '1 / -1';
-    btn.style.justifySelf = 'center';
-    btn.onclick = newScenario;
-    el.appendChild(btn);
-    return;
+    const b=document.createElement('button');
+    b.className='btn-deal'; b.textContent='Deal'; b.onclick=newScenario;
+    el.appendChild(b); return;
   }
   if (!scenario) return;
+  const ev=evalHand(scenario.player);
+  const isFirst=scenario.player.length===2;
+  const showDouble=isFirst, showSplit=isFirst&&ev.isPair&&state.zone>=3;
+  const showSurr=isFirst&&(state.zone===1||state.zone===4);
 
-  const ev = evalHand(scenario.player);
-  const isFirst = scenario.player.length === 2;
-  const showSplit = isFirst && ev.isPair && (state.zone === 3 || state.zone === 4);
-  const showDouble = isFirst;
-  const showSurrender = isFirst && (state.zone === 1 || state.zone === 4);
-
-  // Always Hit and Stand
-  el.appendChild(makeActionBtn('hit', 'Hit', '+', 'H'));
-  el.appendChild(makeActionBtn('stand', 'Stand', '✋', 'S'));
-  if (showDouble) el.appendChild(makeActionBtn('double', 'Double', '↑', 'D'));
-  if (showSplit) el.appendChild(makeActionBtn('split', 'Split', '↔', 'P'));
-  if (showSurrender) el.appendChild(makeActionBtn('surrender', 'Surrender', '✖', 'R'));
+  el.appendChild(mkBtn('hit','Hit','+','H'));
+  el.appendChild(mkBtn('stand','Stand','✋','S'));
+  if (showDouble) el.appendChild(mkBtn('double','Double','↑','D'));
+  if (showSplit)  el.appendChild(mkBtn('split','Split','↔','P'));
+  if (showSurr)   el.appendChild(mkBtn('surr','Surrender','✕','R'));
 }
 
-function makeActionBtn(cls, label, icon, code) {
-  const b = document.createElement('button');
-  b.className = 'btn-action ' + cls;
-  b.innerHTML = '<div class="icon">' + icon + '</div><div>' + label + '</div>';
-  b.onclick = () => applyAction(code);
-  return b;
-}
-
-function renderSidebar() {
-  $('streak-value').textContent = state.streak;
-  $('mp-value').textContent = state.mp;
-  $('zone-num').textContent = state.zone;
-  const streakStat = $('streak-stat');
-  if (state.streak > 0) streakStat.classList.add('active');
-  else streakStat.classList.remove('active');
-}
-
-function renderZoneLabel() {
-  const z = ZONES[state.zone - 1];
-  $('zone-label').innerHTML = 'Zone ' + z.id + ' <span class="dot">&middot;</span> ' + z.name;
+function mkBtn(cls,label,icon,code) {
+  const b=document.createElement('button');
+  b.className='btn-action '+cls;
+  b.innerHTML='<div class="icon">'+icon+'</div><div>'+label+'</div>';
+  b.onclick=()=>applyAction(code); return b;
 }
 
 function makeCardEl(kind, card) {
-  const el = document.createElement('div');
-  el.className = 'card deal-anim';
-  if (kind === 'back') {
-    el.classList.add('back');
-    return el;
-  }
-  el.classList.add(card.red ? 'red' : 'black');
-  el.innerHTML =
-    '<div class="corner tl"><span class="rank">' + card.rank + '</span><span class="suit">' + card.suit + '</span></div>' +
-    '<div class="pip">' + card.suit + '</div>' +
-    '<div class="corner br"><span class="rank">' + card.rank + '</span><span class="suit">' + card.suit + '</span></div>';
+  const el=document.createElement('div');
+  el.className='card';
+  if (kind==='back') { el.classList.add('back'); return el; }
+  el.classList.add(card.red?'red':'black');
+  el.innerHTML=
+    '<div class="corner tl"><span class="rank">'+card.rank+'</span><span class="suit">'+card.suit+'</span></div>'+
+    '<div class="pip">'+card.suit+'</div>'+
+    '<div class="corner br"><span class="rank">'+card.rank+'</span><span class="suit">'+card.suit+'</span></div>';
   return el;
 }
 
-/* =========================================================
-   FEEDBACK TOAST
-========================================================= */
-
-function flashFeedback(good, html) {
-  const f = $('feedback');
-  $('feedback-verdict').textContent = good ? 'Correct' : 'Wrong';
-  $('feedback-correction').innerHTML = html;
-  f.classList.remove('good', 'bad');
-  f.classList.add(good ? 'good' : 'bad');
-  f.classList.add('show');
-  if (good) {
-    setTimeout(() => f.classList.remove('show'), 450);
-  } else {
-    setTimeout(() => f.classList.remove('show'), 1300);
-  }
+function syncSidebar() {
+  $('s-streak-val').textContent=state.streak;
+  $('s-mp-val').textContent=state.mp;
+  $('s-zone-val').textContent=state.zone;
+  $('s-streak').classList.toggle('hot', state.streak>0);
 }
 
-/* =========================================================
-   STATS / SHEET CONTENT
-========================================================= */
-
-function syncStats() {
-  // Sheet — Progress
-  $('prog-mastery').textContent = state.mp;
-  const acc = state.hands ? Math.round((state.correct / state.hands) * 1000) / 10 + '%' : '—';
-  $('prog-accuracy').textContent = acc;
-  $('prog-best').textContent = state.bestStreak;
-  $('prog-hands').textContent = state.hands;
-
-  // Stats sheet
-  $('stats-mp').textContent = state.mp;
-  $('stats-hands').textContent = state.hands;
-  $('stats-correct').textContent = state.correct;
-  $('stats-accuracy').textContent = acc;
-  $('stats-current-streak').textContent = state.streak;
-  $('stats-best-streak').textContent = state.bestStreak;
-
-  // Zone progress list
-  const zpl = $('zone-progress-list');
-  zpl.innerHTML = '';
-  for (const z of ZONES) {
-    const stats = state.zoneStats[z.id];
-    const pct = stats.t ? Math.round((stats.c / stats.t) * 100) + '%' : '—';
-    const unlocked = isZoneUnlocked(z.id);
-    const row = document.createElement('div');
-    row.className = 'zone-prog';
-    row.innerHTML =
-      '<span class="zone-name' + (unlocked ? '' : ' locked') + '">Zone ' + z.id + ' &middot; ' + z.name + '</span>' +
-      '<span class="pct">' + (unlocked ? pct + ' (' + stats.t + ')' : '🔒') + '</span>';
-    zpl.appendChild(row);
-  }
+function renderZoneLabel() {
+  const z=ZONES[state.zone-1];
+  $('zone-lbl').innerHTML='Zone '+z.id+' <span class="dot">&middot;</span> '+z.name;
 }
 
-function buildZoneList() {
-  const list = $('zone-list');
-  list.innerHTML = '';
-  for (const z of ZONES) {
-    const unlocked = isZoneUnlocked(z.id);
-    const selected = state.zone === z.id;
-    const row = document.createElement('div');
-    row.className = 'card-row';
-    row.innerHTML =
-      '<div class="row-main">' +
-        '<div class="row-title' + (unlocked ? (' zone' + z.id) : ' locked') + '">Zone ' + z.id + ': ' + z.name + '</div>' +
-        '<div class="row-sub">' + z.sub + '</div>' +
-      '</div>' +
-      '<div class="row-trail">' +
-        (unlocked
-          ? (selected ? '<span class="check">✓</span>' : '<span class="chevron">›</span>')
-          : '<span class="mp-cost">' + z.unlock.toLocaleString() + ' MP</span>')
-      + '</div>';
-    if (unlocked) {
-      row.onclick = () => {
-        state.zone = z.id;
-        saveState();
-        buildZoneList();
-        closeSheet('settings-sheet');
-        newScenario();
-      };
+/* ============================================================
+   COMPACT CHART
+============================================================ */
+const DEALER_LABELS=['2','3','4','5','6','7','8','9','10','A'];
+
+const CHART_ROWS = {
+  hard:[
+    {label:'≤8',key:5},{label:'9',key:9},{label:'10',key:10},{label:'11',key:11},
+    {label:'12',key:12},{label:'13',key:13},{label:'14',key:14},
+    {label:'15',key:15},{label:'16',key:16},{label:'≥17',key:17}
+  ],
+  soft:[
+    {label:'A,2',key:13},{label:'A,3',key:14},{label:'A,4',key:15},{label:'A,5',key:16},
+    {label:'A,6',key:17},{label:'A,7',key:18},{label:'A,8',key:19},{label:'A,9',key:20}
+  ],
+  pairs:[
+    {label:'A,A',key:'A'},{label:'10,10',key:'10'},{label:'9,9',key:'9'},{label:'8,8',key:'8'},
+    {label:'7,7',key:'7'},{label:'6,6',key:'6'},{label:'5,5',key:'5'},
+    {label:'4,4',key:'4'},{label:'3,3',key:'3'},{label:'2,2',key:'2'}
+  ]
+};
+
+function renderChart() {
+  const ev = scenario ? evalHand(scenario.player) : null;
+  const curDi = scenario ? dealerIndex(scenario.dealer.rank) : -1;
+
+  // Determine current row key
+  let curRowKey = null;
+  if (scenario && ev) {
+    if (chartType==='hard' && !ev.soft) curRowKey = Math.min(Math.max(ev.total,5),17);
+    if (chartType==='soft' && ev.soft) curRowKey = Math.min(Math.max(ev.total,13),20);
+    if (chartType==='pairs' && ev.isPair && scenario.player.length===2) curRowKey = pairKey(scenario.player[0]);
+  }
+
+  const rows = CHART_ROWS[chartType];
+  const table = chartType==='hard' ? STRAT.hard : chartType==='soft' ? STRAT.soft : STRAT.pairs;
+
+  let h='<thead><tr><th class="ct-corner"></th>';
+  for (let i=0;i<10;i++) {
+    h+='<th class="ct-col-hdr'+(i===curDi?' cur':'')+'">'+ DEALER_LABELS[i]+'</th>';
+  }
+  h+='</tr></thead><tbody>';
+
+  for (const row of rows) {
+    const isRow = curRowKey!==null && String(row.key)===String(curRowKey);
+    h+='<tr><th class="ct-row-lbl'+(isRow?' cur':'')+'" scope="row">'+row.label+'</th>';
+    const rowData = table[row.key] || '';
+    for (let i=0;i<10;i++) {
+      const code = rowData[i]||'H';
+      const cls  = {H:'h',S:'s',D:'d',X:'d',P:'p',R:'r'}[code]||'h';
+      const label= code==='X'?'D':code;
+      const hi   = isRow&&i===curDi;
+      h+='<td class="ct-cell c-'+cls+(hi?' cur':'')+'">'+ label+'</td>';
     }
-    list.appendChild(row);
+    h+='</tr>';
   }
+  h+='</tbody>';
+  $('chart-table').innerHTML=h;
 }
 
-function buildModifiersList() {
-  const list = $('modifiers-list');
-  list.innerHTML = '';
-  for (const m of MODIFIERS) {
-    const unlocked = state.mp >= m.unlock;
-    const row = document.createElement('div');
-    row.className = 'card-row';
-    row.innerHTML =
-      '<div class="row-icon">' + m.icon + '</div>' +
-      '<div class="row-main">' +
-        '<div class="row-title' + (unlocked ? '' : ' locked') + '">' + m.name + '</div>' +
-        (unlocked ? '' : '<div class="row-sub" style="color:var(--double);">Unlock at ' + m.unlock.toLocaleString() + ' MP</div>') +
-      '</div>' +
-      '<div class="row-trail">' + (unlocked ? '<span class="chevron">›</span>' : '<span class="lock">🔒</span>') + '</div>';
-    list.appendChild(row);
-  }
+/* ============================================================
+   FEEDBACK
+============================================================ */
+function flash(good, html) {
+  const f=$('feedback');
+  $('fb-verdict').textContent=good?'Correct':'Wrong';
+  $('fb-correction').innerHTML=html;
+  f.className='feedback show '+(good?'good':'bad');
+  setTimeout(()=>f.classList.remove('show'), good?400:1300);
 }
 
-function buildZonePopover() {
-  const pop = $('zone-popover');
-  for (const row of pop.querySelectorAll('.pop-row')) {
-    const z = parseInt(row.dataset.zone, 10);
-    const unlocked = isZoneUnlocked(z);
-    const selected = state.zone === z;
-    row.classList.toggle('locked', !unlocked);
-    const trail = row.querySelector('.pop-trail');
-    if (!unlocked) trail.innerHTML = '<span style="font-size:14px;">🔒</span>';
-    else if (selected) trail.innerHTML = '<span class="check">✓</span>';
-    else trail.innerHTML = '';
-    row.onclick = unlocked ? () => {
-      state.zone = z;
-      saveState();
-      hidePopover();
-      newScenario();
-    } : null;
-  }
+/* ============================================================
+   THEME
+============================================================ */
+function applyTheme(name) {
+  const t=THEMES[name]||THEMES.classic;
+  const r=document.documentElement.style;
+  r.setProperty('--felt',t.felt);
+  r.setProperty('--felt-deep',t.deep);
+  r.setProperty('--felt-edge',t.edge);
 }
 
-function updateMpPopover() {
-  $('mp-pop-num').textContent = state.mp;
-  // Find next unlock
-  let next = null;
-  for (const z of ZONES) {
-    if (state.mp < z.unlock) { next = { name: 'Zone ' + z.id + ': ' + z.name, mp: z.unlock }; break; }
-  }
-  if (!next) {
-    for (const m of MODIFIERS) {
-      if (state.mp < m.unlock) { next = { name: m.name, mp: m.unlock }; break; }
-    }
-  }
-  const txt = next ? (next.mp - state.mp).toLocaleString() + ' points to unlock ' + next.name : 'All content unlocked';
-  $('mp-next-text').textContent = txt;
-}
-
-function updateStreakPopover() {
-  $('streak-pop-cur').textContent = state.streak;
-  $('streak-pop-best').textContent = state.bestStreak;
-}
-
-/* =========================================================
-   SHEETS / POPOVERS
-========================================================= */
-
+/* ============================================================
+   SHEETS / PANELS
+============================================================ */
 function openSheet(id) {
-  document.getElementById(id).classList.add('show');
-  if (id === 'settings-sheet') buildZoneList();
-  if (id === 'modifiers-sheet') buildModifiersList();
-  if (id === 'stats-sheet') syncStats();
-  if (id === 'charts-sheet') {
-    $('charts-frame').src = 'charts/hard.html';
-    document.querySelectorAll('.charts-tab').forEach(t => t.classList.toggle('active', t.dataset.chart === 'hard'));
+  $(id).classList.add('show');
+  if (id==='settings-sheet') { buildZoneList(); syncProgress(); }
+  if (id==='stats-sheet') syncStats();
+  if (id==='modifiers-sheet') buildModifiers();
+  if (id==='themes-sheet') buildThemes();
+  if (id==='rules-sheet') { syncToggles(); buildCurrentRules(); }
+}
+function closeSheet(id) { $(id).classList.remove('show'); }
+
+/* Zone list */
+function buildZoneList() {
+  const el=$('zone-list'); el.innerHTML='';
+  for (const z of ZONES) {
+    const unlocked=isZoneUnlocked(z.id), selected=state.zone===z.id;
+    const row=document.createElement('div');
+    row.className='crow'+(unlocked?' tap':'');
+    row.innerHTML=
+      '<div class="crow-main">'+
+        '<div class="crow-title '+(unlocked?'green':'dim')+'">Zone '+z.id+': '+z.name+'</div>'+
+        '<div class="crow-sub">'+z.sub+'</div>'+
+      '</div>'+
+      '<div class="crow-trail">'+
+        (unlocked ? (selected?'<span class="check">✓</span>':'<span class="chev">›</span>') :
+         '<span class="mp-cost">'+z.unlock.toLocaleString()+' MP</span>')
+      +'</div>';
+    if (unlocked) row.onclick=()=>{ state.zone=z.id; saveState(); buildZoneList(); closeSheet('settings-sheet'); newScenario(); };
+    el.appendChild(row);
   }
 }
-function closeSheet(id) { document.getElementById(id).classList.remove('show'); }
 
+/* Modifiers list */
+function buildModifiers() {
+  const el=$('modifiers-list'); el.innerHTML='';
+  for (const m of MODIFIERS) {
+    const unlocked=state.mp>=m.unlock;
+    const row=document.createElement('div');
+    row.className='crow';
+    row.innerHTML=
+      '<div class="crow-icon" style="color:var(--ink-dim);">'+m.icon+'</div>'+
+      '<div class="crow-main">'+
+        '<div class="crow-title'+(unlocked?'':' dim')+'">'+m.name+'</div>'+
+        (!unlocked?'<div class="crow-sub" style="color:var(--double);">Unlock at '+m.unlock.toLocaleString()+' MP</div>':'')+
+      '</div>'+
+      '<div class="crow-trail">'+(unlocked?'<span class="chev">›</span>':'<span class="lock">🔒</span>')+'</div>';
+    el.appendChild(row);
+  }
+}
+
+/* Themes list */
+function buildThemes() {
+  const el=$('themes-list'); el.innerHTML='';
+  for (const [id,t] of Object.entries(THEMES)) {
+    const row=document.createElement('div');
+    row.className='crow tap';
+    row.innerHTML=
+      '<div class="theme-swatch" style="background:'+t.swatch+'"></div>'+
+      '<div class="crow-main"><div class="crow-title">'+t.name+'</div></div>'+
+      '<div class="crow-trail">'+(state.theme===id?'<span class="check">✓</span>':'')+'</div>';
+    row.onclick=()=>{ state.theme=id; saveState(); applyTheme(id); buildThemes(); };
+    el.appendChild(row);
+  }
+}
+
+/* Current rules display */
+function buildCurrentRules() {
+  const r=state.rules;
+  const el=$('current-rules-display'); el.innerHTML='';
+  const items=[
+    ['Decks', r.decks],
+    ['Dealer', r.h17?'Hits Soft 17':'Stands Soft 17'],
+    ['Double', 'Any Two Cards'],
+    ['DAS', r.das?'Yes':'No'],
+    ['Surrender', r.es10?'Early vs 10': r.ls?'Late':'None'],
+    ['No Hole Card', r.enhc?(r.obo?'Yes (OBO)':'Yes (Full)'):'No (Peeks)'],
+    ['Resplit Aces', r.rsa?'Yes':'No'],
+    ['Blackjack', '3:2']
+  ];
+  for (const [label,val] of items) {
+    const row=document.createElement('div');
+    row.className='crow';
+    row.innerHTML='<div class="crow-main"><div class="crow-title">'+label+'</div></div><div class="crow-trail">'+val+'</div>';
+    el.appendChild(row);
+  }
+}
+
+/* Sync stats */
+function syncStats() {
+  const acc=state.hands?Math.round(state.correct/state.hands*1000)/10+'%':'—';
+  $('st-hands').textContent=state.hands;
+  $('st-correct').textContent=state.correct;
+  $('st-acc').textContent=acc;
+  $('st-mp').textContent=state.mp;
+  $('st-streak').textContent=state.streak;
+  $('st-best').textContent=state.bestStreak;
+
+  const el=$('zone-prog-list'); el.innerHTML='';
+  for (const z of ZONES) {
+    const s=state.zoneStats[z.id];
+    const pct=s.t?Math.round(s.c/s.t*100)+'%':'—';
+    const unlocked=isZoneUnlocked(z.id);
+    const row=document.createElement('div');
+    row.className='stat-row';
+    row.innerHTML='<span class="label">Zone '+z.id+' &middot; '+z.name+'</span>'+
+      '<span class="value">'+(unlocked?pct:'🔒')+'</span>';
+    el.appendChild(row);
+  }
+}
+
+function syncProgress() {
+  const acc=state.hands?Math.round(state.correct/state.hands*1000)/10+'%':'—';
+  $('prog-mp').textContent=state.mp;
+  $('prog-acc').textContent=acc;
+  $('prog-best').textContent=state.bestStreak;
+}
+
+/* Popovers */
+let activePopover=null;
 function showPopover(popId, anchor) {
   hidePopover();
-  const p = document.getElementById(popId);
-  const r = anchor.getBoundingClientRect();
-  p.style.left = Math.max(8, r.right + 8) + 'px';
-  p.style.top = Math.max(8, r.top) + 'px';
-  // Clamp to viewport
-  document.body.appendChild(p);
-  setTimeout(() => {
-    const pr = p.getBoundingClientRect();
-    if (pr.right > window.innerWidth - 8) {
-      p.style.left = (window.innerWidth - pr.width - 8) + 'px';
-    }
-    if (pr.bottom > window.innerHeight - 8) {
-      p.style.top = (window.innerHeight - pr.height - 8) + 'px';
-    }
-  }, 0);
+  const p=$(popId);
+  const r=anchor.getBoundingClientRect();
+  p.style.left=(r.right+8)+'px';
+  p.style.top=Math.max(8,r.top)+'px';
   p.classList.add('show');
-  $('pop-backdrop').classList.add('show');
+  $('pop-bd').classList.add('show');
+  activePopover=popId;
+  // Update content
+  if (popId==='mp-pop') {
+    $('mp-pop-num').textContent=state.mp;
+    const next=ZONES.find(z=>state.mp<z.unlock)||MODIFIERS.find(m=>state.mp<m.unlock);
+    $('mp-pop-next').textContent=next?(next.unlock-state.mp).toLocaleString()+' pts to '+next.name:'All unlocked!';
+  }
+  if (popId==='streak-pop') {
+    $('streak-pop-cur').textContent=state.streak;
+    $('streak-pop-best').textContent=state.bestStreak;
+  }
+  if (popId==='zone-pop') buildZonePopover();
+  // Clamp to viewport
+  setTimeout(()=>{
+    const pr=p.getBoundingClientRect();
+    if (pr.right>window.innerWidth-8) p.style.left=(window.innerWidth-pr.width-8)+'px';
+    if (pr.bottom>window.innerHeight-8) p.style.top=(window.innerHeight-pr.height-8)+'px';
+  },0);
 }
-
 function hidePopover() {
-  document.querySelectorAll('.popover.show').forEach(p => p.classList.remove('show'));
-  $('pop-backdrop').classList.remove('show');
+  if (activePopover) $(activePopover).classList.remove('show');
+  $('pop-bd').classList.remove('show');
+  activePopover=null;
+}
+function buildZonePopover() {
+  const pop=$('zone-pop');
+  for (const row of pop.querySelectorAll('.pop-row')) {
+    const z=parseInt(row.dataset.zone,10);
+    const unlocked=isZoneUnlocked(z), selected=state.zone===z;
+    row.classList.toggle('locked',!unlocked);
+    const trail=row.querySelector('.pop-trail');
+    trail.innerHTML=!unlocked?'🔒':selected?'<span class="check">✓</span>':'';
+    row.onclick=unlocked?()=>{state.zone=z;saveState();hidePopover();newScenario();}:null;
+  }
 }
 
-/* =========================================================
+/* Rule toggles → state → rebuild strategy */
+function syncToggles() {
+  const r=state.rules;
+  $('t-h17').classList.toggle('on',!!r.h17);
+  $('t-das').classList.toggle('on',!!r.das);
+  $('t-ls').classList.toggle('on',!!r.ls);
+  $('t-enhc').classList.toggle('on',!!r.enhc);
+  $('t-es10').classList.toggle('on',!!r.es10);
+  $('t-obo').classList.toggle('on',!!r.obo);
+  $('t-rsa').classList.toggle('on',!!r.rsa);
+  $('r-decks').value=r.decks||8;
+}
+
+function wireToggle(id, key) {
+  $(id).addEventListener('click', ()=>{
+    state.rules[key] = !state.rules[key];
+    // Mutual exclusions
+    if (key==='es10'&&state.rules.es10) state.rules.ls=false;
+    if (key==='ls'&&state.rules.ls) state.rules.es10=false;
+    if (key==='obo'&&state.rules.obo) state.rules.enhc=true;
+    STRAT=buildTables(state.rules); saveState(); syncToggles(); buildCurrentRules();
+    if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
+  });
+}
+
+function applyPreset(name) {
+  const p=PRESETS[name]; if(!p) return;
+  state.rules={...deepClone(DEFAULT_RULES),...p};
+  STRAT=buildTables(state.rules); saveState(); syncToggles(); buildCurrentRules();
+  if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
+}
+
+/* Export / Import */
+function exportStats() {
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='blackjack-trainer-stats.json';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function importStats(file) {
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try {
+      const data=JSON.parse(e.target.result);
+      if (typeof data.mp==='number') {
+        state={...deepClone(DEFAULT_STATE),...data,
+          rules:{...deepClone(DEFAULT_RULES),...(data.rules||{})},
+          zoneStats:{...deepClone(DEFAULT_STATE.zoneStats),...(data.zoneStats||{})}
+        };
+        STRAT=buildTables(state.rules);
+        saveState(); applyTheme(state.theme);
+        syncSidebar(); syncProgress(); syncStats();
+        newScenario();
+        alert('Stats imported successfully!');
+      }
+    } catch(err) { alert('Invalid stats file.'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ============================================================
    EVENT WIRING
-========================================================= */
+============================================================ */
+window.addEventListener('DOMContentLoaded', ()=>{
 
-function wire() {
-  $('settings-btn').onclick = () => openSheet('settings-sheet');
-  $('charts-btn').onclick = () => openSheet('charts-sheet');
-
-  document.querySelectorAll('[data-close]').forEach(el => {
-    el.onclick = (e) => { e.stopPropagation(); closeSheet(el.dataset.close); };
-  });
-  document.querySelectorAll('[data-open]').forEach(el => {
-    el.onclick = () => openSheet(el.dataset.open);
-  });
-  document.querySelectorAll('.sheet').forEach(s => {
-    s.addEventListener('click', (e) => { if (e.target === s) closeSheet(s.id); });
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e=>{
+    if (handOver&&e.key===' '){e.preventDefault();newScenario();return;}
+    const map={h:'H',s:'S',d:'D',p:'P',r:'R',H:'H',S:'S',D:'D',P:'P',R:'R'};
+    if (map[e.key]) applyAction(map[e.key]);
   });
 
-  // Sidebar popovers
-  $('zone-stat').onclick = (e) => { e.stopPropagation(); buildZonePopover(); showPopover('zone-popover', e.currentTarget); };
-  $('mp-stat').onclick = (e) => { e.stopPropagation(); updateMpPopover(); showPopover('mp-popover', e.currentTarget); };
-  $('streak-stat').onclick = (e) => { e.stopPropagation(); updateStreakPopover(); showPopover('streak-popover', e.currentTarget); };
-  $('pop-backdrop').onclick = hidePopover;
+  // Sidebar stat taps
+  $('s-streak').onclick=e=>{e.stopPropagation();showPopover('streak-pop',e.currentTarget);};
+  $('s-mp').onclick=e=>{e.stopPropagation();showPopover('mp-pop',e.currentTarget);};
+  $('s-zone').onclick=e=>{e.stopPropagation();showPopover('zone-pop',e.currentTarget);};
+  $('pop-bd').onclick=hidePopover;
 
-  // Charts tabs
-  document.querySelectorAll('.charts-tab').forEach(t => {
-    t.onclick = () => {
-      document.querySelectorAll('.charts-tab').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      $('charts-frame').src = 'charts/' + t.dataset.chart + '.html';
+  // Settings / chart buttons
+  $('settings-btn').onclick=()=>openSheet('settings-sheet');
+  $('chart-btn').onclick=()=>{
+    const p=$('chart-panel');
+    p.classList.toggle('show');
+    if (p.classList.contains('show')) renderChart();
+  };
+  $('chart-close').onclick=()=>$('chart-panel').classList.remove('show');
+
+  // Chart tabs
+  document.querySelectorAll('.chart-tab').forEach(t=>{
+    t.onclick=()=>{
+      chartType=t.dataset.ct;
+      document.querySelectorAll('.chart-tab').forEach(x=>x.classList.toggle('active',x===t));
+      renderChart();
     };
   });
 
-  // Toggles (display-only — strategy fixed to Macau in MVP)
-  document.querySelectorAll('.toggle').forEach(t => {
-    t.onclick = () => t.classList.toggle('on');
+  // Sheet open/close
+  document.querySelectorAll('[data-close]').forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();closeSheet(el.dataset.close);};
+  });
+  document.querySelectorAll('[data-open]').forEach(el=>{
+    el.onclick=()=>openSheet(el.dataset.open);
+  });
+  document.querySelectorAll('.sheet').forEach(s=>{
+    s.addEventListener('click',e=>{if(e.target===s)closeSheet(s.id);});
   });
 
-  // Reset stats
-  $('reset-stats').onclick = () => {
-    if (!confirm('Reset all statistics? Mastery Points and progress will be cleared.')) return;
-    state = { ...defaultState, zoneStats: { 1:{c:0,t:0}, 2:{c:0,t:0}, 3:{c:0,t:0}, 4:{c:0,t:0} } };
-    saveState();
-    syncStats();
-    renderSidebar();
-    buildZoneList();
-    buildModifiersList();
-    closeSheet('stats-sheet');
-    newScenario();
+  // Rule toggles
+  wireToggle('t-h17','h17'); wireToggle('t-das','das');
+  wireToggle('t-ls','ls');   wireToggle('t-enhc','enhc');
+  wireToggle('t-es10','es10'); wireToggle('t-obo','obo');
+  wireToggle('t-rsa','rsa');
+  $('r-decks').onchange=()=>{
+    state.rules.decks=parseInt($('r-decks').value,10);
+    STRAT=buildTables(state.rules); saveState(); buildCurrentRules();
   };
 
-  // Keyboard shortcuts (desktop)
-  document.addEventListener('keydown', (e) => {
-    if (handOver && e.key === ' ') { e.preventDefault(); newScenario(); return; }
-    if (e.key === 'h' || e.key === 'H') applyAction('H');
-    else if (e.key === 's' || e.key === 'S') applyAction('S');
-    else if (e.key === 'd' || e.key === 'D') applyAction('D');
-    else if (e.key === 'p' || e.key === 'P') applyAction('P');
-    else if (e.key === 'r' || e.key === 'R') applyAction('R');
-  });
-}
+  // Preferred hand
+  $('hand-select').value=state.preferredHand||'right';
+  $('hand-select').onchange=()=>{
+    state.preferredHand=$('hand-select').value;
+    document.body.classList.toggle('left-handed',state.preferredHand==='left');
+    saveState();
+  };
+  document.body.classList.toggle('left-handed',state.preferredHand==='left');
 
-/* =========================================================
-   INIT
-========================================================= */
+  // Export / Import
+  $('export-btn').onclick=exportStats;
+  $('import-btn').onclick=()=>$('import-file').click();
+  $('import-file').onchange=e=>{if(e.target.files[0])importStats(e.target.files[0]);e.target.value='';};
 
-window.addEventListener('DOMContentLoaded', () => {
-  wire();
-  syncStats();
+  // Reset
+  $('reset-btn').onclick=()=>{
+    if (!confirm('Reset all statistics? Mastery Points will be cleared.')) return;
+    const rules=deepClone(state.rules), theme=state.theme, hand=state.preferredHand;
+    state={...deepClone(DEFAULT_STATE),rules,theme,preferredHand:hand};
+    STRAT=buildTables(state.rules);
+    saveState(); syncSidebar(); syncProgress(); syncStats(); buildZoneList();
+    closeSheet('stats-sheet'); newScenario();
+  };
+
+  // Apply saved theme and start
+  applyTheme(state.theme);
+  syncSidebar();
   newScenario();
 });
 </script>
