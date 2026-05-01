@@ -828,15 +828,23 @@ const DEFAULT_STATE = {
   preferredHand:'right'
 };
 
+// Verify localStorage is actually writable (Safari ITP / "Block All Cookies" silently breaks it)
+function storageAvailable() {
+  try {
+    localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true;
+  } catch(e) { return false; }
+}
+const LS_OK = storageAvailable();
+
 let state = loadState();
 let STRAT = buildTables(state.rules);
 
 function loadState() {
+  if (!LS_OK) return deepClone(DEFAULT_STATE);
   try {
     const raw = localStorage.getItem(STATE_KEY);
     if (!raw) return deepClone(DEFAULT_STATE);
     const s = JSON.parse(raw);
-    // Merge to catch new fields from updates
     return {
       ...deepClone(DEFAULT_STATE), ...s,
       rules: { ...deepClone(DEFAULT_RULES), ...(s.rules || {}) },
@@ -846,6 +854,7 @@ function loadState() {
 }
 
 function saveState() {
+  if (!LS_OK) return;
   try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch(e) {}
 }
 
@@ -1511,6 +1520,18 @@ window.addEventListener('DOMContentLoaded', ()=>{
     saveState(); syncSidebar(); syncProgress(); syncStats(); buildZoneList();
     closeSheet('stats-sheet'); newScenario();
   };
+
+  // Save on page unload (belt-and-suspenders against browser eviction)
+  window.addEventListener('beforeunload', saveState);
+  window.addEventListener('pagehide', saveState); // iOS Safari fires pagehide, not beforeunload
+
+  // Warn if localStorage is blocked (Safari "Block All Cookies" / ITP)
+  if (!LS_OK) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#b8780b;color:#fff;font-size:13px;font-weight:600;text-align:center;padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:200;';
+    banner.textContent = '⚠️ Storage blocked — stats won\'t persist. In Safari: Settings → Safari → turn off "Block All Cookies".';
+    document.body.appendChild(banner);
+  }
 
   // Apply saved theme and start
   applyTheme(state.theme);
