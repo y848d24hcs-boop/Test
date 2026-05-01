@@ -564,6 +564,10 @@ body.left-handed .sidebar { left:auto; right:8px; }
           </select>
         </div>
       </div>
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Hide Hand Total</div><div class="crow-sub">Calculate the score yourself</div></div>
+        <div class="crow-trail"><div class="toggle" id="t-hide-total"></div></div>
+      </div>
     </div>
 
     <div style="padding:16px 20px;display:flex;gap:12px;justify-content:center;">
@@ -829,7 +833,8 @@ const DEFAULT_STATE = {
   zoneStats:{ 1:{c:0,t:0}, 2:{c:0,t:0}, 3:{c:0,t:0}, 4:{c:0,t:0} },
   rules: { ...DEFAULT_RULES },
   theme:'classic',
-  preferredHand:'right'
+  preferredHand:'right',
+  hideTotal:false
 };
 
 // Verify localStorage is actually writable (Safari ITP / "Block All Cookies" silently breaks it)
@@ -1100,12 +1105,17 @@ function renderPlayerHand() {
   if (ev.busted) {
     tot.style.display='none'; zl.style.display='none'; bust.style.display='block';
   } else {
-    tot.style.display=''; zl.style.display=''; bust.style.display='none';
-    const ev2=evalHand(scenario.player);
-    const isPairHand=ev2.isPair&&scenario.player.length===2&&state.zone>=3;
-    tot.textContent = isPairHand ? 'Pair of '+pairKey(scenario.player[0])+'s' :
-                      ev2.soft   ? 'Soft '+ev2.total :
-                      ''+ev2.total;
+    bust.style.display='none'; zl.style.display='';
+    if (state.hideTotal) {
+      tot.style.display='none';
+    } else {
+      tot.style.display='';
+      const ev2=evalHand(scenario.player);
+      const isPairHand=ev2.isPair&&scenario.player.length===2&&state.zone>=3;
+      tot.textContent = isPairHand ? 'Pair of '+pairKey(scenario.player[0])+'s' :
+                        ev2.soft   ? 'Soft '+ev2.total :
+                        ''+ev2.total;
+    }
   }
 }
 
@@ -1569,6 +1579,15 @@ window.addEventListener('DOMContentLoaded', ()=>{
     saveState();
   };
   document.body.classList.toggle('left-handed',state.preferredHand==='left');
+
+  // Hide total toggle
+  $('t-hide-total').classList.toggle('on', !!state.hideTotal);
+  $('t-hide-total').addEventListener('click', ()=>{
+    state.hideTotal = !state.hideTotal;
+    $('t-hide-total').classList.toggle('on', state.hideTotal);
+    saveState();
+    renderPlayerHand();
+  });
 
   // Export / Import
   $('export-btn').onclick=exportStats;
