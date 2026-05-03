@@ -1,4 +1,4 @@
-const CACHE = 'mbjt-v1';
+const CACHE = 'mbjt-v2';
 const ASSETS = ['./', './index.html'];
 
 self.addEventListener('install', e => {
