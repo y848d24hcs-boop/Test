@@ -1633,6 +1633,11 @@ window.addEventListener('DOMContentLoaded', ()=>{
   window.addEventListener('beforeunload', saveState);
   window.addEventListener('pagehide', saveState); // iOS Safari fires pagehide, not beforeunload
 
+  // Service worker for offline support (only on HTTPS / localhost — Safari skips it on local IPs)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+
   // Warn if localStorage is blocked (Safari "Block All Cookies" / ITP)
   if (!LS_OK) {
     const banner = document.createElement('div');
