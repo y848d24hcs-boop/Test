@@ -749,10 +749,11 @@ function buildTables(rules) {
 
   // Surrender — apply after base table
   if (rules.esna) {
-    // Early Surrender vs non-Ace (real Macau standard: surrender vs 2-10, not A)
-    H[15] = H[15].slice(0,7) + 'RR' + H[15].slice(9); // 15 vs 9, 10
-    H[16] = H[16].slice(0,6) + 'RRR' + H[16].slice(9); // 16 vs 8, 9, 10
-    H[17] = H[17].slice(0,8) + 'R' + H[17].slice(9);   // 17 vs 10
+    // Early Surrender vs non-Ace (Macau standard: vs 2–10, not A)
+    // Correct set: 15v9, 15v10, 16v9, 16v10
+    // 16v8 excluded (hit EV ≈ −0.471 > −0.50); 17v10 excluded (stand EV ≈ −0.467 > −0.50)
+    H[15] = H[15].slice(0,7) + 'RR' + H[15].slice(9); // vs 9(7), 10(8)
+    H[16] = H[16].slice(0,7) + 'RR' + H[16].slice(9); // vs 9(7), 10(8)
   } else if (rules.es10) {
     // ES10: surrender only vs 10 (index 8)
     H[15] = H[15].slice(0,8) + 'R' + H[15].slice(9);
