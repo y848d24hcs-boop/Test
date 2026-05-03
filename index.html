@@ -703,8 +703,12 @@ body.left-handed .sidebar { left:auto; right:8px; }
         <div class="crow-trail"><div class="toggle on" id="t-enhc"></div></div>
       </div>
       <div class="crow">
-        <div class="crow-main"><div class="crow-title">Early Surrender vs 10</div><div class="crow-sub">ES10 — Macau specific</div></div>
-        <div class="crow-trail"><div class="toggle on" id="t-es10"></div></div>
+        <div class="crow-main"><div class="crow-title">Early Surrender vs non-Ace</div><div class="crow-sub">ESNA — real Macau standard (vs 2–10)</div></div>
+        <div class="crow-trail"><div class="toggle on" id="t-esna"></div></div>
+      </div>
+      <div class="crow">
+        <div class="crow-main"><div class="crow-title">Early Surrender vs 10 only</div><div class="crow-sub">ES10 — restricted variant</div></div>
+        <div class="crow-trail"><div class="toggle" id="t-es10"></div></div>
       </div>
       <div class="crow">
         <div class="crow-main"><div class="crow-title">Original Bet Only</div><div class="crow-sub">OBO — lose original bet only to dealer BJ</div></div>
@@ -744,7 +748,12 @@ function buildTables(rules) {
   };
 
   // Surrender — apply after base table
-  if (rules.es10) {
+  if (rules.esna) {
+    // Early Surrender vs non-Ace (real Macau standard: surrender vs 2-10, not A)
+    H[15] = H[15].slice(0,7) + 'RR' + H[15].slice(9); // 15 vs 9, 10
+    H[16] = H[16].slice(0,6) + 'RRR' + H[16].slice(9); // 16 vs 8, 9, 10
+    H[17] = H[17].slice(0,8) + 'R' + H[17].slice(9);   // 17 vs 10
+  } else if (rules.es10) {
     // ES10: surrender only vs 10 (index 8)
     H[15] = H[15].slice(0,8) + 'R' + H[15].slice(9);
     H[16] = H[16].slice(0,8) + 'R' + H[16].slice(9);
@@ -784,6 +793,11 @@ function buildTables(rules) {
     '2' : rules.das ? 'PPPPPPHHHH' : 'HHPPPPHHHH'
   };
 
+  // ESNA + ENHC (no OBO): 8,8 vs dealer 10 = surrender (losing 2x to dealer BJ not worth the split)
+  if (rules.esna && rules.enhc && !rules.obo) {
+    P['8'] = P['8'].slice(0,8) + 'R' + P['8'].slice(9);
+  }
+
   return { hard: H, soft: S, pairs: P };
 }
 
@@ -816,18 +830,18 @@ const THEMES = {
 };
 
 const PRESETS = {
-  macau:     { decks:8, h17:false, das:true, enhc:true, es10:true, ls:false, obo:false, rsa:false },
-  macau_obo: { decks:8, h17:false, das:true, enhc:true, es10:true, ls:false, obo:true,  rsa:false },
-  vegas:     { decks:6, h17:false, das:true, enhc:false, es10:false, ls:true,  obo:false, rsa:true  },
-  european:  { decks:6, h17:false, das:true, enhc:true,  es10:false, ls:false, obo:false, rsa:false },
-  atlantic:  { decks:8, h17:false, das:true, enhc:false, es10:false, ls:true,  obo:false, rsa:true  }
+  macau:     { decks:8, h17:false, das:true, enhc:true,  esna:true,  es10:false, ls:false, obo:false, rsa:false },
+  macau_obo: { decks:8, h17:false, das:true, enhc:true,  esna:true,  es10:false, ls:false, obo:true,  rsa:false },
+  vegas:     { decks:6, h17:false, das:true, enhc:false, esna:false, es10:false, ls:true,  obo:false, rsa:true  },
+  european:  { decks:6, h17:false, das:true, enhc:true,  esna:false, es10:false, ls:false, obo:false, rsa:false },
+  atlantic:  { decks:8, h17:false, das:true, enhc:false, esna:false, es10:false, ls:true,  obo:false, rsa:true  }
 };
 
 /* ============================================================
    STATE
 ============================================================ */
 const STATE_KEY = 'mbjt_v2';
-const DEFAULT_RULES = { decks:8, h17:false, das:true, enhc:true, es10:true, ls:false, obo:false, rsa:false };
+const DEFAULT_RULES = { decks:8, h17:false, das:true, enhc:true, esna:true, es10:false, ls:false, obo:false, rsa:false };
 const DEFAULT_STATE = {
   mp:0, streak:0, bestStreak:0, zone:1, hands:0, correct:0,
   zoneStats:{ 1:{c:0,t:0}, 2:{c:0,t:0}, 3:{c:0,t:0}, 4:{c:0,t:0} },
@@ -1363,7 +1377,7 @@ function buildCurrentRules() {
     ['Dealer', r.h17?'Hits Soft 17':'Stands Soft 17'],
     ['Double', 'Any Two Cards'],
     ['DAS', r.das?'Yes':'No'],
-    ['Surrender', r.es10?'Early vs 10': r.ls?'Late':'None'],
+    ['Surrender', r.esna?'Early vs non-Ace': r.es10?'Early vs 10': r.ls?'Late':'None'],
     ['No Hole Card', r.enhc?(r.obo?'Yes (OBO)':'Yes (Full)'):'No (Peeks)'],
     ['Resplit Aces', r.rsa?'Yes':'No'],
     ['Blackjack', '3:2']
@@ -1459,6 +1473,7 @@ function syncToggles() {
   $('t-das').classList.toggle('on',!!r.das);
   $('t-ls').classList.toggle('on',!!r.ls);
   $('t-enhc').classList.toggle('on',!!r.enhc);
+  $('t-esna').classList.toggle('on',!!r.esna);
   $('t-es10').classList.toggle('on',!!r.es10);
   $('t-obo').classList.toggle('on',!!r.obo);
   $('t-rsa').classList.toggle('on',!!r.rsa);
@@ -1468,12 +1483,9 @@ function syncToggles() {
 function wireToggle(id, key) {
   $(id).addEventListener('click', ()=>{
     state.rules[key] = !state.rules[key];
-    // Mutual exclusions
-    if (key==='es10'&&state.rules.es10) state.rules.ls=false;
-    if (key==='ls'&&state.rules.ls) state.rules.es10=false;
     if (key==='obo'&&state.rules.obo) state.rules.enhc=true;
     STRAT=buildTables(state.rules); saveState(); syncToggles(); buildCurrentRules();
-    if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
+    if ($('chart-panel').classList.contains('show')) renderChart();
   });
 }
 
@@ -1563,9 +1575,20 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
   // Rule toggles
   wireToggle('t-h17','h17'); wireToggle('t-das','das');
-  wireToggle('t-ls','ls');   wireToggle('t-enhc','enhc');
-  wireToggle('t-es10','es10'); wireToggle('t-obo','obo');
+  wireToggle('t-enhc','enhc'); wireToggle('t-obo','obo');
   wireToggle('t-rsa','rsa');
+  // Surrender options are mutually exclusive
+  ['t-esna','t-es10','t-ls'].forEach(id => {
+    $(id).addEventListener('click', () => {
+      const key = id==='t-esna'?'esna': id==='t-es10'?'es10':'ls';
+      const wasOn = state.rules[key];
+      state.rules.esna=false; state.rules.es10=false; state.rules.ls=false;
+      if (!wasOn) state.rules[key]=true;
+      if (key==='obo'&&state.rules.obo) state.rules.enhc=true;
+      STRAT=buildTables(state.rules); saveState(); syncToggles(); buildCurrentRules();
+      if ($('chart-panel').classList.contains('show')) renderChart();
+    });
+  });
   $('r-decks').onchange=()=>{
     state.rules.decks=parseInt($('r-decks').value,10);
     STRAT=buildTables(state.rules); saveState(); buildCurrentRules();
