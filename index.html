@@ -122,9 +122,11 @@ body.left-handed .sidebar { left:auto; right:8px; }
   box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 4px 14px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
   position:relative; flex-shrink:0;
   font-weight:800; overflow:hidden;
-  animation: deal .3s cubic-bezier(.34,1.56,.64,1);
+  animation: deal .3s cubic-bezier(.34,1.56,.64,1) backwards;
 }
 @keyframes deal { from{transform:translateY(-24px) rotate(-5deg);opacity:0} to{transform:none;opacity:1} }
+.card.flip-out { animation: flipOut .22s ease-in  forwards;  }
+.card.flip-in  { animation: flipIn  .22s ease-out backwards; }
 
 .card.red { color:var(--red); }
 .card.black { color:var(--black); }
@@ -1125,21 +1127,22 @@ function renderDealerHand() {
   if (!scenario) { el.innerHTML=''; return; }
   if (lastRendered !== scenario) {
     el.innerHTML='';
-    el.appendChild(makeCardEl('back'));
-    el.appendChild(makeCardEl('face', scenario.dealer));
+    el.appendChild(makeCardEl('back', null, 0));
+    el.appendChild(makeCardEl('face', scenario.dealer, 150));
   }
 }
 
 function renderPlayerHand() {
   const el=$('player-hand');
   if (!scenario) { el.innerHTML=''; return; }
+  const startIndex=el.children.length;
   if (lastRendered !== scenario) {
     el.innerHTML='';
     lastRendered = scenario;
   }
-  // Append only cards we haven't rendered yet (preserves previous deal animations)
   for (let i=el.children.length; i<scenario.player.length; i++) {
-    el.appendChild(makeCardEl('face', scenario.player[i]));
+    const delay=(startIndex===0) ? i*150 : 0;
+    el.appendChild(makeCardEl('face', scenario.player[i], delay));
   }
   const ev=evalHand(scenario.player);
   const tot=$('p-total'), bust=$('bust-lbl'), zl=$('zone-lbl');
@@ -1151,11 +1154,10 @@ function renderPlayerHand() {
       tot.style.display='none';
     } else {
       tot.style.display='';
-      const ev2=evalHand(scenario.player);
-      const isPairHand=ev2.isPair&&scenario.player.length===2&&state.zone>=3;
+      const isPairHand=ev.isPair&&scenario.player.length===2&&state.zone>=3;
       tot.textContent = isPairHand ? 'Pair of '+pairKey(scenario.player[0])+'s' :
-                        ev2.soft   ? 'Soft '+ev2.total :
-                        ''+ev2.total;
+                        ev.soft    ? 'Soft '+ev.total :
+                        ''+ev.total;
     }
   }
 }
@@ -1187,9 +1189,10 @@ function mkBtn(cls,label,icon,code) {
   b.onclick=()=>applyAction(code); return b;
 }
 
-function makeCardEl(kind, card) {
+function makeCardEl(kind, card, delay=0) {
   const el=document.createElement('div');
   el.className='card';
+  if (delay) el.style.animationDelay=delay+'ms';
   if (kind==='back') { el.classList.add('back'); return el; }
   el.classList.add(card.red?'red':'black');
   el.innerHTML=
@@ -1289,20 +1292,17 @@ function resolveDealer(playerTotal) {
   return { cards: dealerCards, outcome };
 }
 
-// Flip the dealer's face-down card to reveal the hole card
 function flipHoleCard(holeCard) {
-  const dealerHand = $('dealer-hand');
-  const back = dealerHand.firstElementChild;
-  if (!back || !back.classList.contains('back')) return;
-  back.style.animation = 'flipOut .25s ease-in forwards';
+  const back = $('dealer-hand').firstElementChild;
+  if (!back?.classList.contains('back')) return;
+  back.classList.add('flip-out');
   setTimeout(() => {
     const face = makeCardEl('face', holeCard);
-    face.style.animation = 'flipIn .25s ease-out forwards';
+    face.classList.add('flip-in');
     back.replaceWith(face);
-  }, 250);
+  }, 220);
 }
 
-// Append a face-up card to the dealer hand (uses the existing deal animation)
 function addDealerCard(card) {
   $('dealer-hand').appendChild(makeCardEl('face', card));
 }
@@ -1348,7 +1348,7 @@ function flash(good, html) {
   const f=$('feedback');
   $('fb-verdict').textContent=good?'Correct':'Wrong';
   $('fb-correction').innerHTML=html;
-  f.className='feedback show '+(good?'good':'bad');
+  f.className='show '+(good?'good':'bad');
   setTimeout(()=>f.classList.remove('show'), good?400:1300);
 }
 
@@ -1589,6 +1589,51 @@ function importStats(file) {
 }
 
 /* ============================================================
+   APP ICON  (180×180, generated at runtime)
+============================================================ */
+function generateIcon() {
+  const c=document.createElement('canvas'); c.width=c.height=180;
+  const ctx=c.getContext('2d');
+  // Background gradient
+  const bg=ctx.createLinearGradient(0,0,0,180);
+  bg.addColorStop(0,'#1a5c32'); bg.addColorStop(1,'#041a0d');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,180,180);
+  // Subtle vignette
+  const vg=ctx.createRadialGradient(90,90,30,90,90,110);
+  vg.addColorStop(0,'rgba(255,255,255,0.04)'); vg.addColorStop(1,'rgba(0,0,0,0.35)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,180,180);
+  // Lotus — 5 oval petals
+  ctx.fillStyle='rgba(255,255,255,0.88)';
+  const cx=90, cy=66, pr=13, pd=20;
+  for (let i=0;i<5;i++) {
+    const a=(i/5)*Math.PI*2-Math.PI/2;
+    ctx.save();
+    ctx.translate(cx+Math.cos(a)*pd, cy+Math.sin(a)*pd);
+    ctx.rotate(a+Math.PI/2);
+    ctx.scale(1,1.7);
+    ctx.beginPath(); ctx.arc(0,0,pr,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  // Lotus centre
+  ctx.beginPath(); ctx.arc(cx,cy,9,0,Math.PI*2);
+  ctx.fillStyle='#0a3a1f'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fill();
+  // "21"
+  ctx.font='bold 72px -apple-system,BlinkMacSystemFont,system-ui,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#f4c54a';
+  ctx.shadowColor='rgba(0,0,0,0.4)'; ctx.shadowBlur=6;
+  ctx.fillText('21',90,128);
+  ctx.shadowBlur=0;
+  // "MACAU" caption
+  ctx.font='600 17px -apple-system,BlinkMacSystemFont,system-ui,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.55)';
+  ctx.fillText('MACAU',90,161);
+  return c.toDataURL('image/png');
+}
+
+/* ============================================================
    EVENT WIRING
 ============================================================ */
 window.addEventListener('DOMContentLoaded', ()=>{
@@ -1705,6 +1750,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
     banner.textContent = '⚠️ Storage blocked — stats won\'t persist. In Safari: Settings → Safari → turn off "Block All Cookies".';
     document.body.appendChild(banner);
   }
+
+  // Inject app icon (apple-touch-icon + favicon)
+  const iconData=generateIcon();
+  ['apple-touch-icon','shortcut icon'].forEach(rel=>{
+    const l=document.createElement('link'); l.rel=rel; l.href=iconData;
+    document.head.appendChild(l);
+  });
 
   // Apply saved theme and start
   applyTheme(state.theme);
