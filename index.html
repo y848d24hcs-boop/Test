@@ -110,7 +110,11 @@ body.left-handed .sidebar { left:auto; right:8px; }
 .dealer-area { margin-top:2vh; }
 .player-area { align-self:center; display:flex; flex-direction:column; align-items:center; gap:10px; }
 
-.hand { display:flex; position:relative; height:162px; }
+.hand { display:flex; position:relative; height:162px; perspective:600px; }
+
+/* Dealer hole-card flip: split into two halves for a smooth content swap */
+@keyframes flipOut { from { transform:rotateY(0); } to { transform:rotateY(90deg); } }
+@keyframes flipIn  { from { transform:rotateY(-90deg); } to { transform:rotateY(0); } }
 
 .card {
   width:110px; height:154px; border-radius:10px;
@@ -1039,16 +1043,17 @@ function onCorrect(code) {
     const ev2 = evalHand(scenario.player);
     setTimeout(() => {
       render();
-      if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
+      if ($('chart-panel').classList.contains('show')) renderChart();
       if (ev2.busted) {
         handOver=true; render();
         showOutcome('bust', 120);
         setTimeout(newScenario, 1500);
       } else if (ev2.total===21) {
         handOver=true; render();
-        const res = resolveDealer(21);
-        showOutcome(res, 120);
-        setTimeout(newScenario, 1500);
+        playDealer(21, outcome => {
+          showOutcome(outcome, 0);
+          setTimeout(newScenario, 1300);
+        });
       }
     }, 300);
   } else if (code==='D') {
@@ -1057,9 +1062,16 @@ function onCorrect(code) {
     handOver=true;
     setTimeout(() => {
       render();
-      if (document.getElementById('chart-panel').classList.contains('show')) renderChart();
-      showOutcome(ev2.busted ? 'bust' : resolveDealer(ev2.total), 120);
-      setTimeout(newScenario, 1600);
+      if ($('chart-panel').classList.contains('show')) renderChart();
+      if (ev2.busted) {
+        showOutcome('bust', 120);
+        setTimeout(newScenario, 1500);
+      } else {
+        playDealer(ev2.total, outcome => {
+          showOutcome(outcome, 0);
+          setTimeout(newScenario, 1300);
+        });
+      }
     }, 300);
   } else if (code==='R') {
     handOver=true; render();
@@ -1067,9 +1079,10 @@ function onCorrect(code) {
     setTimeout(newScenario, 1400);
   } else if (code==='S') {
     handOver=true; render();
-    const res = resolveDealer(evalHand(scenario.player).total);
-    showOutcome(res, 450);
-    setTimeout(newScenario, 1700);
+    playDealer(evalHand(scenario.player).total, outcome => {
+      showOutcome(outcome, 0);
+      setTimeout(newScenario, 1300);
+    });
   } else {
     // Split — can't resolve a single dealer hand; just advance
     handOver=true;
@@ -1105,17 +1118,29 @@ function render() {
   renderZoneLabel();
 }
 
+let lastRendered = null; // track scenario identity for incremental rendering
+
 function renderDealerHand() {
-  const el=$('dealer-hand'); el.innerHTML='';
-  if (!scenario) return;
-  el.appendChild(makeCardEl('back'));
-  el.appendChild(makeCardEl('face', scenario.dealer));
+  const el=$('dealer-hand');
+  if (!scenario) { el.innerHTML=''; return; }
+  if (lastRendered !== scenario) {
+    el.innerHTML='';
+    el.appendChild(makeCardEl('back'));
+    el.appendChild(makeCardEl('face', scenario.dealer));
+  }
 }
 
 function renderPlayerHand() {
-  const el=$('player-hand'); el.innerHTML='';
-  if (!scenario) return;
-  for (const c of scenario.player) el.appendChild(makeCardEl('face',c));
+  const el=$('player-hand');
+  if (!scenario) { el.innerHTML=''; return; }
+  if (lastRendered !== scenario) {
+    el.innerHTML='';
+    lastRendered = scenario;
+  }
+  // Append only cards we haven't rendered yet (preserves previous deal animations)
+  for (let i=el.children.length; i<scenario.player.length; i++) {
+    el.appendChild(makeCardEl('face', scenario.player[i]));
+  }
   const ev=evalHand(scenario.player);
   const tot=$('p-total'), bust=$('bust-lbl'), zl=$('zone-lbl');
   if (ev.busted) {
@@ -1251,15 +1276,50 @@ function renderChart() {
 ============================================================ */
 function resolveDealer(playerTotal) {
   const hole = makeCard(pickRank());
-  const dealerCards = [hole, scenario.dealer];
+  const dealerCards = [hole, scenario.dealer]; // [hole, upcard, ...draws]
   let ev = evalHand(dealerCards);
   while (ev.total < 17 || (ev.soft && ev.total === 17 && state.rules.h17)) {
     dealerCards.push(makeCard(pickRank()));
     ev = evalHand(dealerCards);
   }
-  if (ev.busted)               return 'dealerBust';
-  if (ev.total === playerTotal) return 'push';
-  return playerTotal > ev.total ? 'win' : 'lose';
+  let outcome;
+  if (ev.busted)                     outcome = 'dealerBust';
+  else if (ev.total === playerTotal) outcome = 'push';
+  else                               outcome = playerTotal > ev.total ? 'win' : 'lose';
+  return { cards: dealerCards, outcome };
+}
+
+// Flip the dealer's face-down card to reveal the hole card
+function flipHoleCard(holeCard) {
+  const dealerHand = $('dealer-hand');
+  const back = dealerHand.firstElementChild;
+  if (!back || !back.classList.contains('back')) return;
+  back.style.animation = 'flipOut .25s ease-in forwards';
+  setTimeout(() => {
+    const face = makeCardEl('face', holeCard);
+    face.style.animation = 'flipIn .25s ease-out forwards';
+    back.replaceWith(face);
+  }, 250);
+}
+
+// Append a face-up card to the dealer hand (uses the existing deal animation)
+function addDealerCard(card) {
+  $('dealer-hand').appendChild(makeCardEl('face', card));
+}
+
+// Orchestrate dealer reveal: flip hole, then deal each draw card, then resolve
+function playDealer(playerTotal, onDone) {
+  const { cards, outcome } = resolveDealer(playerTotal);
+  const hole = cards[0];
+  const draws = cards.slice(2); // anything after hole + upcard
+  setTimeout(() => flipHoleCard(hole), 300);
+  let delay = 800;
+  for (const card of draws) {
+    const d = delay;
+    setTimeout(() => addDealerCard(card), d);
+    delay += 380;
+  }
+  setTimeout(() => onDone(outcome), delay);
 }
 
 function showOutcome(type, delayMs) {
