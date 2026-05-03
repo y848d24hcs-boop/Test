@@ -651,10 +651,10 @@ body.left-handed .sidebar { left:auto; right:8px; }
     <div class="sec-title">Macau Presets</div>
     <div class="card-group">
       <div class="crow tap" onclick="applyPreset('macau')">
-        <div class="crow-main"><div class="crow-title green">Macau Standard</div><div class="crow-sub">8D · H17 · DAS · ENHC · ESNA — All major properties</div></div>
+        <div class="crow-main"><div class="crow-title green">Macau Standard</div><div class="crow-sub">8D · S17 · DAS · ENHC · ESNA — All major properties</div></div>
       </div>
       <div class="crow tap" onclick="applyPreset('macau_obo')">
-        <div class="crow-main"><div class="crow-title green">Grand Lisboa / MGM (OBO)</div><div class="crow-sub">8D · H17 · DAS · ENHC · ESNA · OBO</div></div>
+        <div class="crow-main"><div class="crow-title green">Grand Lisboa / MGM (OBO)</div><div class="crow-sub">8D · S17 · DAS · ENHC · ESNA · OBO</div></div>
       </div>
     </div>
 
@@ -683,8 +683,8 @@ body.left-handed .sidebar { left:auto; right:8px; }
         </div>
       </div>
       <div class="crow">
-        <div class="crow-main"><div class="crow-title">Dealer Hits Soft 17</div><div class="crow-sub">H17 — real Macau standard</div></div>
-        <div class="crow-trail"><div class="toggle on" id="t-h17"></div></div>
+        <div class="crow-main"><div class="crow-title">Dealer Hits Soft 17</div><div class="crow-sub">H17 — worse for player</div></div>
+        <div class="crow-trail"><div class="toggle" id="t-h17"></div></div>
       </div>
       <div class="crow">
         <div class="crow-main"><div class="crow-title">Double After Split</div><div class="crow-sub">DAS — better for player</div></div>
@@ -832,8 +832,8 @@ const THEMES = {
 };
 
 const PRESETS = {
-  macau:     { decks:8, h17:true, das:true, enhc:true,  esna:true,  es10:false, ls:false, obo:false, rsa:false },
-  macau_obo: { decks:8, h17:true, das:true, enhc:true,  esna:true,  es10:false, ls:false, obo:true,  rsa:false },
+  macau:     { decks:8, h17:false, das:true, enhc:true,  esna:true,  es10:false, ls:false, obo:false, rsa:false },
+  macau_obo: { decks:8, h17:false, das:true, enhc:true,  esna:true,  es10:false, ls:false, obo:true,  rsa:false },
   vegas:     { decks:6, h17:false, das:true, enhc:false, esna:false, es10:false, ls:true,  obo:false, rsa:true  },
   european:  { decks:6, h17:false, das:true, enhc:true,  esna:false, es10:false, ls:false, obo:false, rsa:false },
   atlantic:  { decks:8, h17:false, das:true, enhc:false, esna:false, es10:false, ls:true,  obo:false, rsa:true  }
@@ -843,7 +843,7 @@ const PRESETS = {
    STATE
 ============================================================ */
 const STATE_KEY = 'mbjt_v2';
-const DEFAULT_RULES = { decks:8, h17:true, das:true, enhc:true, esna:true, es10:false, ls:false, obo:false, rsa:false };
+const DEFAULT_RULES = { decks:8, h17:false, das:true, enhc:true, esna:true, es10:false, ls:false, obo:false, rsa:false };
 const DEFAULT_STATE = {
   mp:0, streak:0, bestStreak:0, zone:1, hands:0, correct:0,
   zoneStats:{ 1:{c:0,t:0}, 2:{c:0,t:0}, 3:{c:0,t:0}, 4:{c:0,t:0} },
