@@ -75,7 +75,7 @@ body {
 /* ===== SIDEBAR ===== */
 .sidebar {
   position:absolute; top:50%; transform:translateY(-50%);
-  left:8px;
+  right:8px;
   background:var(--panel);
   backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   border:1px solid var(--panel-edge);
@@ -83,7 +83,7 @@ body {
   display:flex; flex-direction:column; align-items:center; gap:8px;
   z-index:5;
 }
-body.left-handed .sidebar { left:auto; right:8px; }
+body.left-handed .sidebar { right:auto; left:8px; }
 
 .sidebar .stat {
   display:flex; flex-direction:column; align-items:center; gap:1px;
@@ -160,11 +160,12 @@ body.left-handed .sidebar { left:auto; right:8px; }
 
 /* ===== ACTIONS ===== */
 .actions {
-  display:flex; gap:8px;
+  display:flex; flex-direction:row-reverse; gap:8px;
   padding:10px 12px calc(10px + env(safe-area-inset-bottom));
   background:linear-gradient(to top, rgba(0,0,0,0.3), transparent);
   flex-shrink:0;
 }
+body.left-handed .actions { flex-direction:row; }
 .btn-action {
   flex:1; font-family:inherit; font-size:16px; font-weight:600; color:var(--ink);
   border:none; border-radius:14px; padding:16px 6px 14px;
@@ -437,7 +438,7 @@ body.left-handed .sidebar { left:auto; right:8px; }
       </div>
       <div class="divider"></div>
       <button class="icon-btn" id="settings-btn">&#x2699;</button>
-      <button class="icon-btn" id="chart-btn">&#x1F4C4;</button>
+      <button class="icon-btn" id="chart-btn">&#x265F;</button>
     </aside>
 
     <div class="dealer-area">
